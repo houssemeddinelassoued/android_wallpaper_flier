@@ -7,5 +7,5 @@ The source code is released under Apache 2.0 and can be used in commercial or pe
 See LICENSE for more information.
 
 Compiled application will be released on Android market from time to time. Check
-http://market.android.com/details?id=fi.harism.wallpaper.twinkle for taking a brief
+http://market.android.com/details?id=fi.harism.wallpaper.flier for taking a brief
 look on the project.
