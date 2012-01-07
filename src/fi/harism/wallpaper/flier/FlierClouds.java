@@ -13,16 +13,16 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 
-public class FlierClouds {
+public final class FlierClouds {
 
 	private static final float ZNEAR = 1f, ZFAR = 6f;
 
 	private FloatBuffer mBufferPoints;
-	private Vector<Cloud> mClouds = new Vector<Cloud>();
+	private final Vector<Cloud> mClouds = new Vector<Cloud>();
 	private float mMaxPointSizeNear, mMaxPointSizeFar;
-	private float[] mProjM = new float[16];
-	private RectF mRectNear = new RectF(), mRectFar = new RectF();
-	private FlierShader mShaderPoint = new FlierShader();
+	private final float[] mProjM = new float[16];
+	private final RectF mRectNear = new RectF(), mRectFar = new RectF();
+	private final FlierShader mShaderPoint = new FlierShader();
 	private float mXOffset, mXOffsetMultiplier = 4f;
 
 	public FlierClouds(int cloudCount, int pointsPerCloud) {
@@ -46,7 +46,7 @@ public class FlierClouds {
 		Matrix.frustumM(mProjM, 0, -1f, 1f, -aspectRatio, aspectRatio, ZNEAR,
 				ZFAR);
 
-		float projInvM[] = new float[16];
+		final float projInvM[] = new float[16];
 		Matrix.invertM(projInvM, 0, mProjM, 0);
 		unproject(projInvM, mRectNear, -1);
 		unproject(projInvM, mRectFar, 1);
@@ -73,10 +73,10 @@ public class FlierClouds {
 			needsSorting |= cloud.animate();
 		}
 		if (needsSorting) {
-			Comparator<Cloud> comparator = new Comparator<Cloud>() {
+			final Comparator<Cloud> comparator = new Comparator<Cloud>() {
 				@Override
 				public int compare(Cloud arg0, Cloud arg1) {
-					return arg0.getZ() < arg1.getZ() ? 1 : -1;
+					return arg0.getZ() >= arg1.getZ() ? -1 : 1;
 				}
 			};
 			Collections.sort(mClouds, comparator);
@@ -125,7 +125,7 @@ public class FlierClouds {
 	}
 
 	private void unproject(float[] projInv, RectF rect, float z) {
-		float result[] = new float[4];
+		final float result[] = new float[4];
 		Matrix.multiplyMV(result, 0, projInv, 0, new float[] { -1, 1, z, 1 }, 0);
 		rect.left = result[0] / result[3];
 		rect.top = result[1] / result[3];

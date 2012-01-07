@@ -11,21 +11,20 @@ import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
-public class FlierRenderer implements GLSurfaceView.Renderer {
+public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	// Holder for background colors.
 	private FloatBuffer mBackgroundColors;
-	private FlierClouds mClouds = new FlierClouds(15, 20);
+	private final FlierClouds mClouds = new FlierClouds(15, 20);
 	// Application context.
 	private Context mContext;
 	// Fbo for offscreen rendering.
 	private final FlierFbo mFbo = new FlierFbo();
-	private FlierPlane mPlane = new FlierPlane();
+	private final FlierPlane mPlane = new FlierPlane();
 	// Vertices for full view rendering.
 	private FloatBuffer mScreenVertices;
 	// Shader for copying offscreen texture on screen.
 	private final FlierShader mShaderCopy = new FlierShader();
-
 	// Shader for rendering background gradient.
 	private final FlierShader mShaderFill = new FlierShader();
 	// Surface size.
@@ -48,14 +47,6 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 		mBackgroundColors.put(BACKGROUND_COLOR_TOP)
 				.put(BACKGROUND_COLOR_BOTTOM).put(BACKGROUND_COLOR_TOP)
 				.put(BACKGROUND_COLOR_BOTTOM).position(0);
-	}
-
-	public void animationFinish() {
-
-	}
-
-	public void animationInit(AnimationObserver observer) {
-
 	}
 
 	@Override
@@ -107,7 +98,6 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 		mWidth = width;
 		mHeight = height;
 		mFbo.init(width / 2, height / 2, 1, true, true);
-
 		mPlane.init(mFbo.getWidth(), mFbo.getHeight());
 		mClouds.init(mFbo.getWidth(), mFbo.getHeight());
 	}
@@ -118,17 +108,12 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 				mContext.getString(R.string.shader_copy_fs));
 		mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
 				mContext.getString(R.string.shader_fill_fs));
-
 		mPlane.init(mContext);
 		mClouds.init(mContext);
 	}
 
 	public void setXOffset(float xOffset) {
 		mClouds.setXOffset(xOffset);
-	}
-
-	public interface AnimationObserver {
-		public void onAnimationFinished();
 	}
 
 }

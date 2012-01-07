@@ -9,12 +9,12 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 
-public class FlierPlane {
+public final class FlierPlane {
 
 	private ByteBuffer mBufferLineIndices;
 	private FloatBuffer mBufferVertices;
-	private float[] mProjM = new float[16], mViewM = new float[16];
-	private FlierShader mShaderPlane = new FlierShader();
+	private final float[] mProjM = new float[16], mViewM = new float[16];
+	private final FlierShader mShaderPlane = new FlierShader();
 
 	public FlierPlane() {
 		ByteBuffer bBuffer = ByteBuffer.allocateDirect(6 * 3 * 4);
@@ -22,13 +22,14 @@ public class FlierPlane {
 				.asFloatBuffer();
 
 		final float WIDTH = 1f, HEIGHT = 0.3f, LENGTH = 1.2f, BEND = 0.3f;
-		float[] vertices = { 0f, HEIGHT, -LENGTH, WIDTH, HEIGHT, LENGTH, BEND,
-				HEIGHT, LENGTH, 0f, -HEIGHT, LENGTH, -BEND, HEIGHT, LENGTH,
-				-WIDTH, HEIGHT, LENGTH };
+		final float[] vertices = { 0f, HEIGHT, -LENGTH, WIDTH, HEIGHT, LENGTH,
+				BEND, HEIGHT, LENGTH, 0f, -HEIGHT, LENGTH, -BEND, HEIGHT,
+				LENGTH, -WIDTH, HEIGHT, LENGTH };
 		mBufferVertices.put(vertices).position(0);
 
 		mBufferLineIndices = ByteBuffer.allocateDirect(9 * 2);
-		byte[] indices = { 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 1, 2, 2, 3, 3, 4, 4, 5 };
+		final byte[] indices = { 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 1, 2, 2, 3, 3,
+				4, 4, 5 };
 		mBufferLineIndices.put(indices).position(0);
 	}
 
@@ -47,7 +48,7 @@ public class FlierPlane {
 	public void render() {
 		mShaderPlane.useProgram();
 
-		float[] modelViewProjM = new float[16];
+		final float[] modelViewProjM = new float[16];
 		float rx = (float) Math.sin(Math.PI
 				* (SystemClock.uptimeMillis() % 3000) / 1500) * 10f;
 		float rz = (float) Math.cos(Math.PI
