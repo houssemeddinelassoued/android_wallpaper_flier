@@ -18,7 +18,6 @@ package fi.harism.wallpaper.flier;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
-import android.os.Handler;
 import android.service.wallpaper.WallpaperService;
 import android.view.SurfaceHolder;
 
@@ -37,7 +36,6 @@ public final class FlierService extends WallpaperService {
 	 */
 	private final class WallpaperEngine extends Engine {
 
-		// private AnimationHandler mAnimationHandler;
 		// Slightly modified GLSurfaceView.
 		private WallpaperGLSurfaceView mGLSurfaceView;
 		private FlierRenderer mRenderer;
@@ -49,7 +47,6 @@ public final class FlierService extends WallpaperService {
 			// android.os.Debug.waitForDebugger();
 
 			super.onCreate(surfaceHolder);
-			// mAnimationHandler = new AnimationHandler();
 			mRenderer = new FlierRenderer(FlierService.this);
 			mGLSurfaceView = new WallpaperGLSurfaceView(FlierService.this);
 			mGLSurfaceView.setEGLContextClientVersion(2);
@@ -61,8 +58,6 @@ public final class FlierService extends WallpaperService {
 		@Override
 		public void onDestroy() {
 			super.onDestroy();
-			// mAnimationHandler.finish();
-			// mAnimationHandler = null;
 			mGLSurfaceView.onDestroy();
 			mGLSurfaceView = null;
 			mRenderer = null;
@@ -83,51 +78,8 @@ public final class FlierService extends WallpaperService {
 			super.onVisibilityChanged(visible);
 			if (visible) {
 				mGLSurfaceView.onResume();
-				// mAnimationHandler.start();
 			} else {
 				mGLSurfaceView.onPause();
-				// mAnimationHandler.finish();
-			}
-		}
-
-		/**
-		 * Private handler class for timing animation events.
-		 */
-		private final class AnimationHandler implements Runnable,
-				FlierRenderer.AnimationObserver {
-
-			private Handler mHandler = new Handler();
-
-			/**
-			 * Stops animation at once.
-			 */
-			public void finish() {
-				mHandler.removeCallbacks(this);
-				mGLSurfaceView
-						.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-				mRenderer.animationFinish();
-			}
-
-			@Override
-			public void onAnimationFinished() {
-				mGLSurfaceView
-						.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-				start();
-			}
-
-			@Override
-			public void run() {
-				mRenderer.animationInit(this);
-				mGLSurfaceView
-						.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
-				mGLSurfaceView.requestRender();
-			}
-
-			/**
-			 * Triggers a new animation timer.
-			 */
-			public void start() {
-				mHandler.postDelayed(this, 5000 + (int) (Math.random() * 5000));
 			}
 		}
 
