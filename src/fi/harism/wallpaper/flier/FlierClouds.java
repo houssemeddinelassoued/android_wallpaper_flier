@@ -19,11 +19,11 @@ public class FlierClouds {
 
 	private FloatBuffer mBufferPoints;
 	private Vector<Cloud> mClouds = new Vector<Cloud>();
+	private float mMaxPointSizeNear, mMaxPointSizeFar;
 	private float[] mProjM = new float[16];
 	private RectF mRectNear = new RectF(), mRectFar = new RectF();
 	private FlierShader mShaderPoint = new FlierShader();
 	private float mXOffset, mXOffsetMultiplier = 4f;
-	private float mMaxPointSizeNear, mMaxPointSizeFar;
 
 	public FlierClouds(int cloudCount, int pointsPerCloud) {
 		ByteBuffer bBuffer = ByteBuffer.allocateDirect(cloudCount
@@ -50,10 +50,10 @@ public class FlierClouds {
 		Matrix.invertM(projInvM, 0, mProjM, 0);
 		unproject(projInvM, mRectNear, -1);
 		unproject(projInvM, mRectFar, 1);
-		
+
 		mMaxPointSizeNear = Math.min(width, height) / 5;
-		mMaxPointSizeFar = Math.min(width,  height) / 10;
-		
+		mMaxPointSizeFar = Math.min(width, height) / 10;
+
 		mXOffsetMultiplier = mRectNear.width();
 		mRectNear.right += mXOffsetMultiplier;
 		mRectFar.right += mXOffsetMultiplier;
@@ -68,17 +68,20 @@ public class FlierClouds {
 	}
 
 	public void render() {
+		boolean needsSorting = false;
 		for (Cloud cloud : mClouds) {
-			cloud.animate();
+			needsSorting |= cloud.animate();
 		}
-		Comparator<Cloud> comparator = new Comparator<Cloud>() {
-			@Override
-			public int compare(Cloud arg0, Cloud arg1) {
-				return arg0.getZ() < arg1.getZ() ? 1 : -1;
-			}
-		};
-		Collections.sort(mClouds, comparator);
-		
+		if (needsSorting) {
+			Comparator<Cloud> comparator = new Comparator<Cloud>() {
+				@Override
+				public int compare(Cloud arg0, Cloud arg1) {
+					return arg0.getZ() < arg1.getZ() ? 1 : -1;
+				}
+			};
+			Collections.sort(mClouds, comparator);
+		}
+
 		mShaderPoint.useProgram();
 		int uProjM = mShaderPoint.getHandle("uProjM");
 		int uXOffset = mShaderPoint.getHandle("uXOffset");
@@ -133,51 +136,50 @@ public class FlierClouds {
 
 	private class Cloud {
 		private int mIndex, mPointCount;
-		private RectF mViewRect = new RectF(), mContentRect = new RectF();
-		private float mSpeed, mXOffset;
 		private long mInitTime;
+		private float mSpeed, mXOffset;
+		private RectF mViewRect = new RectF(), mContentRect = new RectF();
 
 		public Cloud(int index, int pointCount) {
 			mIndex = index;
 			mPointCount = pointCount;
 		}
-		
-		public void animate() {
-			float t = (float)(SystemClock.uptimeMillis() - mInitTime) / 1000;
+
+		public boolean animate() {
+			float t = (float) (SystemClock.uptimeMillis() - mInitTime) / 1000;
 			mXOffset -= mSpeed * t;
 			if (mXOffset + mContentRect.width() * 3f < mViewRect.left) {
 				genRandCloud();
 				mXOffset = mViewRect.right + mContentRect.width();
 				mSpeed = rand(.005f, .01f);
 				mInitTime = SystemClock.uptimeMillis();
+				return true;
 			}
-		}
-		
-		public void init() {
-			genRandCloud();
-			mXOffset = rand(mViewRect.left, mViewRect.right);
-			mSpeed = rand(.005f, .01f);
-			mInitTime = SystemClock.uptimeMillis();
+			return false;
 		}
 
 		private void genRandCloud() {
 			float z = rand(ZFAR, ZNEAR);
 			float t = (z - ZNEAR) / (ZFAR - ZNEAR);
-			mViewRect.left = mRectNear.left + t * (mRectFar.left - mRectNear.left);
+			mViewRect.left = mRectNear.left + t
+					* (mRectFar.left - mRectNear.left);
 			mViewRect.right = mRectNear.right + t
 					* (mRectFar.right - mRectNear.right);
 			mViewRect.top = mRectNear.top + t * (mRectFar.top - mRectNear.top);
 			mViewRect.bottom = mViewRect.top * 0.25f;
-			
+
 			mContentRect.right = mViewRect.width() * 0.2f;
 			mContentRect.top = mViewRect.height() * 0.2f;
-			
-			float y = rand(mViewRect.bottom, mViewRect.top - mContentRect.height());
-			float ptSz = mMaxPointSizeNear + t * (mMaxPointSizeFar - mMaxPointSizeNear);
+
+			float y = rand(mViewRect.bottom,
+					mViewRect.top - mContentRect.height());
+			float ptSz = mMaxPointSizeNear + t
+					* (mMaxPointSizeFar - mMaxPointSizeNear);
 
 			mBufferPoints.position(mIndex * 4);
 			for (int i = 0; i < mPointCount; ++i) {
-				mBufferPoints.put(rand(0, mContentRect.width())).put(rand(0, mContentRect.height()) + y).put(-z);
+				mBufferPoints.put(rand(0, mContentRect.width()))
+						.put(rand(0, mContentRect.height()) + y).put(-z);
 				mBufferPoints.put(rand(ptSz / 3, ptSz));
 			}
 		}
@@ -190,12 +192,19 @@ public class FlierClouds {
 			return mPointCount;
 		}
 
+		public float getXOffset() {
+			return mXOffset;
+		}
+
 		public float getZ() {
 			return mBufferPoints.get(mIndex * 4 + 2);
 		}
-		
-		public float getXOffset() {
-			return mXOffset;
+
+		public void init() {
+			genRandCloud();
+			mXOffset = rand(mViewRect.left, mViewRect.right);
+			mSpeed = rand(.005f, .01f);
+			mInitTime = SystemClock.uptimeMillis();
 		}
 	}
 
