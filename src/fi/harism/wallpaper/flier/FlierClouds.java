@@ -29,22 +29,45 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 
+/**
+ * Class for handling cloud manipulation and rendering.
+ */
 public final class FlierClouds {
 
+	// Float size in bytes.
 	private static final int SIZE_FLOAT = 4;
+	// Number of floats in point.
 	private static final int SIZE_POINT = 5;
+	// Z near and far clipping planes.
 	private static final float ZNEAR = 1f, ZFAR = 6f;
 
+	// Buffer for holding vertex/point data.
 	private FloatBuffer mBufferPoints;
+	// Cloud storage.
 	private final Vector<Cloud> mClouds = new Vector<Cloud>();
+	// Maximum point sizes for near and far clipping plane.
 	private float mMaxPointSizeNear, mMaxPointSizeFar;
+	// Number of points per cloud.
 	private int mPointsPerCloud;
+	// Projection matrix.
 	private final float[] mProjM = new float[16];
+	// View rectangles for near and far clipping planes.
 	private final RectF mRectNear = new RectF(), mRectFar = new RectF();
+	// Last rendering time.
 	private long mRenderTime;
+	// Shader for rendering points clouds consist of.
 	private final FlierShader mShaderPoint = new FlierShader();
+	// X -offset for handling scrolling and multiplier for adjusting its amount.
 	private float mXOffset, mXOffsetMultiplier = 4f;
 
+	/**
+	 * Default constructor.
+	 * 
+	 * @param cloudCount
+	 *            Number of clouds.
+	 * @param pointsPerCloud
+	 *            Points per cloud.
+	 */
 	public FlierClouds(int cloudCount, int pointsPerCloud) {
 		mPointsPerCloud = pointsPerCloud;
 
@@ -54,11 +77,17 @@ public final class FlierClouds {
 
 		for (int i = 0; i < cloudCount; ++i) {
 			Cloud cloud = new Cloud();
-			cloud.mIndex = i * pointsPerCloud;
+			cloud.mStartIndex = i * pointsPerCloud;
 			mClouds.add(cloud);
 		}
 	}
 
+	/**
+	 * Generates/initializes cloud with random values.
+	 * 
+	 * @param cloud
+	 *            Cloud to modify.
+	 */
 	private void genRandCloud(Cloud cloud) {
 		RectF rect = cloud.mViewRect;
 
@@ -77,7 +106,7 @@ public final class FlierClouds {
 		float pointSz = mMaxPointSizeNear + t
 				* (mMaxPointSizeFar - mMaxPointSizeNear);
 
-		mBufferPoints.position(cloud.mIndex * SIZE_POINT);
+		mBufferPoints.position(cloud.mStartIndex * SIZE_POINT);
 		for (int i = 0; i < mPointsPerCloud; ++i) {
 			mBufferPoints.put(rand(0, cloud.mWidth))
 					.put(rand(0, cloud.mHeight) + y).put(cloud.mZValue);
@@ -86,6 +115,9 @@ public final class FlierClouds {
 		}
 	}
 
+	/**
+	 * Called from renderer for rendering clouds into scene.
+	 */
 	public void onDrawFrame() {
 		boolean needsSorting = false;
 		long renderTime = SystemClock.uptimeMillis();
@@ -136,15 +168,25 @@ public final class FlierClouds {
 			GLES20.glUniform1f(uXOffset, cloud.mXOffset + mXOffset);
 			GLES20.glUniform1f(uPointSizeOffset, 0f);
 			GLES20.glUniform1f(uColorMultiplier, 1f);
-			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mIndex, mPointsPerCloud);
+			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mStartIndex,
+					mPointsPerCloud);
 			GLES20.glUniform1f(uPointSizeOffset, 4f);
 			GLES20.glUniform1f(uColorMultiplier, 0f);
-			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mIndex, mPointsPerCloud);
+			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mStartIndex,
+					mPointsPerCloud);
 		}
 
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 	}
 
+	/**
+	 * Called from renderer once surface has changed.
+	 * 
+	 * @param width
+	 *            Width in pixels.
+	 * @param height
+	 *            Height in pixels.
+	 */
 	public void onSurfaceChanged(int width, int height) {
 		float aspectRatio = (float) height / width;
 		Matrix.frustumM(mProjM, 0, -1f, 1f, -aspectRatio, aspectRatio, ZNEAR,
@@ -170,19 +212,44 @@ public final class FlierClouds {
 		mRenderTime = SystemClock.uptimeMillis();
 	}
 
+	/**
+	 * Called once surface has been created.
+	 * 
+	 * @param ctx
+	 *            Context for reading shaders from.
+	 */
 	public void onSurfaceCreated(Context ctx) {
 		mShaderPoint.setProgram(ctx.getString(R.string.shader_cloud_vs),
 				ctx.getString(R.string.shader_cloud_fs));
 	}
 
+	/**
+	 * Generates random value between [min, max).
+	 * 
+	 * @param min
+	 *            Minimum value.
+	 * @param max
+	 *            Maximum value.
+	 * @return Random value between [min, max).
+	 */
 	private float rand(float min, float max) {
 		return min + (float) Math.random() * (max - min);
 	}
 
+	/**
+	 * Sets x offset for clouds. Offset is expected to be a value between [0,
+	 * 1].
+	 * 
+	 * @param xOffset
+	 *            New x offset value.
+	 */
 	public void setXOffset(float xOffset) {
 		mXOffset = xOffset * mXOffsetMultiplier;
 	}
 
+	/**
+	 * Sorts clouds based on their z value.
+	 */
 	public void sortClouds() {
 		final Comparator<Cloud> comparator = new Comparator<Cloud>() {
 			@Override
@@ -195,6 +262,16 @@ public final class FlierClouds {
 		Collections.sort(mClouds, comparator);
 	}
 
+	/**
+	 * Calculates unprojected rectangle at given z value in screen space.
+	 * 
+	 * @param projInv
+	 *            Inverse of projection matrix.
+	 * @param rect
+	 *            Rectangle to contain result.
+	 * @param z
+	 *            Z value.
+	 */
 	private void unproject(float[] projInv, RectF rect, float z) {
 		final float result[] = new float[4];
 		Matrix.multiplyMV(result, 0, projInv, 0, new float[] { -1, 1, z, 1 }, 0);
@@ -205,9 +282,12 @@ public final class FlierClouds {
 		rect.bottom = result[1] / result[3];
 	}
 
+	/**
+	 * Private class for storing cloud information.
+	 */
 	private final class Cloud {
-		public int mIndex;
 		public float mSpeed, mXOffset;
+		public int mStartIndex;
 		public final RectF mViewRect = new RectF();
 		public float mWidth, mHeight, mZValue;
 	}

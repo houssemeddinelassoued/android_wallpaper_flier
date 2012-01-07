@@ -27,6 +27,9 @@ import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
+/**
+ * Main renderer class.
+ */
 public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	// Holder for background colors.
@@ -47,6 +50,12 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 	// Surface size.
 	private int mWidth, mHeight;
 
+	/**
+	 * Default constructor.
+	 * 
+	 * @param context
+	 *            Context to read shaders from.
+	 */
 	public FlierRenderer(Context context) {
 		mContext = context;
 
@@ -132,6 +141,13 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		mFlierClouds.onSurfaceCreated(mContext);
 	}
 
+	/**
+	 * Sets x offset for clouds. Offset is expected to be a value between [0,
+	 * 1].
+	 * 
+	 * @param xOffset
+	 *            New x offset value.
+	 */
 	public void setXOffset(float xOffset) {
 		mFlierWaves.setXOffset(xOffset);
 		mFlierClouds.setXOffset(xOffset);

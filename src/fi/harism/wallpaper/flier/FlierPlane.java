@@ -25,13 +25,22 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 
+/**
+ * Class for handling paper plane animation and rendering.
+ */
 public final class FlierPlane {
-
+	// Buffer for line indices.
 	private ByteBuffer mBufferLineIndices;
+	// Vertices buffer.
 	private FloatBuffer mBufferVertices;
+	// Projection and view matrices.
 	private final float[] mProjM = new float[16], mViewM = new float[16];
+	// Plane shader.
 	private final FlierShader mShaderPlane = new FlierShader();
 
+	/**
+	 * Default constructor.
+	 */
 	public FlierPlane() {
 		ByteBuffer bBuffer = ByteBuffer.allocateDirect(6 * 3 * 4);
 		mBufferVertices = bBuffer.order(ByteOrder.nativeOrder())
@@ -49,6 +58,9 @@ public final class FlierPlane {
 		mBufferLineIndices.put(indices).position(0);
 	}
 
+	/**
+	 * Called from renderer for rendering paper plane into the scene.
+	 */
 	public void onDrawFrame() {
 		mShaderPlane.useProgram();
 
@@ -97,6 +109,14 @@ public final class FlierPlane {
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 	}
 
+	/**
+	 * Called from renderer once surface has changed.
+	 * 
+	 * @param width
+	 *            Width in pixels.
+	 * @param height
+	 *            Height in pixels.
+	 */
 	public void onSurfaceChanged(int width, int height) {
 		float aspectRatio = (float) height / width;
 		Matrix.orthoM(mProjM, 0, -3f, 3f, -aspectRatio * 2f, aspectRatio * 4f,
@@ -104,11 +124,28 @@ public final class FlierPlane {
 		Matrix.setLookAtM(mViewM, 0, 0, 1f, 5f, 0, 0, 0, 0f, 1f, 0f);
 	}
 
+	/**
+	 * Called from renderer once surface has been created.
+	 * 
+	 * @param ctx
+	 *            Context to read shaders from.
+	 */
 	public void onSurfaceCreated(Context ctx) {
 		mShaderPlane.setProgram(ctx.getString(R.string.shader_plane_vs),
 				ctx.getString(R.string.shader_plane_fs));
 	}
 
+	/**
+	 * Calculates sin value for timed position.
+	 * 
+	 * @param time
+	 *            Current time.
+	 * @param frequency
+	 *            Time between full 360 degree cycle in millis.
+	 * @param multiplier
+	 *            Multiplier for calculating return value sin(x) * multiplier.
+	 * @return Value between [-multiplier, multiplier].
+	 */
 	private float sin(long time, long frequency, float multiplier) {
 		return multiplier
 				* (float) Math.sin((2 * Math.PI * (time % frequency))

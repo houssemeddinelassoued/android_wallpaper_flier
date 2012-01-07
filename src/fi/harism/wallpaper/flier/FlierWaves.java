@@ -22,22 +22,37 @@ import android.content.Context;
 import android.opengl.GLES20;
 import android.os.SystemClock;
 
+/**
+ * Class for handling wave movement and rendering.
+ */
 public final class FlierWaves {
 
+	// Texture shader for rendering actual waves.
 	private final FlierShader mShaderWave = new FlierShader();
+	// Point shader for rendering wave texture.
 	private final FlierShader mShaderWavePoint = new FlierShader();
+	// Screen vertices.
 	private ByteBuffer mVertices;
 
+	// FBO for rendering wave texture into.
 	private final FlierFbo mWaveFbo = new FlierFbo();
+	// View width, height and wave texture size.
 	private int mWidth, mHeight, mWaveSize;
+	// X offset received from wallpaper scrolling.
 	private float mXOffset;
 
+	/**
+	 * Default constructor.
+	 */
 	public FlierWaves() {
 		final byte[] COORDS = { -1, 1, -1, -1, 1, 1, 1, -1 };
 		mVertices = ByteBuffer.allocateDirect(4 * 2);
 		mVertices.put(COORDS).position(0);
 	}
 
+	/**
+	 * Called from renderer for rendering paper plane into the scene.
+	 */
 	public void onDrawFrame() {
 		mShaderWave.useProgram();
 
@@ -75,6 +90,14 @@ public final class FlierWaves {
 		GLES20.glViewport(0, 0, mWidth, mHeight);
 	}
 
+	/**
+	 * Called from renderer once surface has changed.
+	 * 
+	 * @param width
+	 *            Width in pixels.
+	 * @param height
+	 *            Height in pixels.
+	 */
 	public void onSurfaceChanged(int width, int height) {
 		mWidth = width;
 		mHeight = height;
@@ -113,6 +136,12 @@ public final class FlierWaves {
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 	}
 
+	/**
+	 * Called from renderer once surface has been created.
+	 * 
+	 * @param ctx
+	 *            Context to read shaders from.
+	 */
 	public void onSurfaceCreated(Context ctx) {
 		mShaderWavePoint.setProgram(
 				ctx.getString(R.string.shader_wave_point_vs),
@@ -121,10 +150,28 @@ public final class FlierWaves {
 				ctx.getString(R.string.shader_wave_fs));
 	}
 
+	/**
+	 * Sets x offset for clouds. Offset is expected to be a value between [0,
+	 * 1].
+	 * 
+	 * @param xOffset
+	 *            New x offset value.
+	 */
 	public void setXOffset(float xOffset) {
 		mXOffset = xOffset;
 	}
 
+	/**
+	 * Calculates sin value for timed position.
+	 * 
+	 * @param time
+	 *            Current time.
+	 * @param frequency
+	 *            Time between full 360 degree cycle in millis.
+	 * @param multiplier
+	 *            Multiplier for calculating return value sin(x) * multiplier.
+	 * @return Value between [-multiplier, multiplier].
+	 */
 	private float sin(long time, long frequency, float multiplier) {
 		return multiplier
 				* (float) Math.sin((2 * Math.PI * (time % frequency))
