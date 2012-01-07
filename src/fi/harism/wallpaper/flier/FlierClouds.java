@@ -146,12 +146,12 @@ public class FlierClouds {
 		}
 
 		public boolean animate() {
-			float t = (float) (SystemClock.uptimeMillis() - mInitTime) / 15000;
+			float t = (float) (SystemClock.uptimeMillis() - mInitTime) / 30000;
 			mXOffset -= mSpeed * t;
 			if (mXOffset + mContentRect.width() * 3f < mViewRect.left) {
 				genRandCloud();
 				mXOffset = mViewRect.right + mContentRect.width();
-				mSpeed = rand(.1f, .3f);
+				mSpeed = rand(.1f, .2f);
 				mInitTime = SystemClock.uptimeMillis();
 				return true;
 			}
@@ -204,7 +204,7 @@ public class FlierClouds {
 			genRandCloud();
 			mXOffset = rand(mViewRect.left - mContentRect.width(),
 					mViewRect.right + mContentRect.width());
-			mSpeed = rand(.1f, .3f);
+			mSpeed = rand(.1f, .2f);
 			mInitTime = SystemClock.uptimeMillis();
 		}
 	}
