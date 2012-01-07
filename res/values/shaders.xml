@@ -57,8 +57,9 @@
             float dist = length(gl_PointCoord - 0.5);            
             if (dist > 0.5) {
                 discard;
+            } else {
+                gl_FragColor = vColor;
             }
-            gl_FragColor = vColor;
         }
     </string>
     <string name="shader_plane_vs">
@@ -73,6 +74,56 @@
         uniform vec4 uColor;
         void main() {
             gl_FragColor = uColor;
+        }
+    </string>
+    <string name="shader_wave_point_vs">
+        uniform float uPointSize;
+        attribute vec2 aPosition;
+        
+        void main() {
+            gl_Position = vec4(aPosition, 0.0, 1.0);
+            gl_PointSize = uPointSize;
+        }
+    </string>
+    <string name="shader_wave_point_fs">
+        precision mediump float;
+        uniform float uBrightness;
+        
+        void main() {
+            float dist = length(gl_PointCoord - 0.5);            
+            if (dist &lt;= 0.5) {
+                gl_FragColor.r = uBrightness;
+            } else {
+                discard;
+            }
+        }
+    </string>
+    <string name="shader_wave_vs">
+        uniform vec2 uPositionOffset;
+        uniform vec2 uTextureSize;
+        attribute vec2 aPosition;
+        varying vec2 vTexturePos;
+        
+        void main() {
+            gl_Position = vec4(aPosition, 0.0, 1.0);
+            vTexturePos = abs((aPosition - 1.0) * uTextureSize * 0.5);
+            gl_Position.y += uPositionOffset.y;
+            vTexturePos.x += uPositionOffset.x;
+        }
+    </string>
+    <string name="shader_wave_fs">
+        precision mediump float;
+        uniform sampler2D sTexture;
+        uniform vec4 uColor;
+        varying vec2 vTexturePos;
+        
+        void main() {
+            float brightness = texture2D(sTexture, vTexturePos).r;
+            if (texture2D(sTexture, vTexturePos).r != 0.0) {
+                gl_FragColor = uColor * brightness;
+            } else {
+                discard;
+            }
         }
     </string>
 </resources>

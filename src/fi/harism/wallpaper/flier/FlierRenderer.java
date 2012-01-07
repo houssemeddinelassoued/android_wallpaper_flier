@@ -15,12 +15,13 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	// Holder for background colors.
 	private FloatBuffer mBackgroundColors;
-	private final FlierClouds mClouds = new FlierClouds(15, 20);
 	// Application context.
 	private Context mContext;
 	// Fbo for offscreen rendering.
 	private final FlierFbo mFbo = new FlierFbo();
-	private final FlierPlane mPlane = new FlierPlane();
+	private final FlierClouds mFlierClouds = new FlierClouds(15, 20);
+	private final FlierPlane mFlierPlane = new FlierPlane();
+	private final FlierWaves mFlierWaves = new FlierWaves();
 	// Vertices for full view rendering.
 	private FloatBuffer mScreenVertices;
 	// Shader for copying offscreen texture on screen.
@@ -77,8 +78,9 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
 
 		// TODO: Render scene.
-		mPlane.onDrawFrame();
-		mClouds.onDrawFrame();
+		mFlierWaves.onDrawFrame();
+		mFlierPlane.onDrawFrame();
+		mFlierClouds.onDrawFrame();
 
 		// Copy FBO to screen buffer.
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
@@ -97,9 +99,10 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
 		mWidth = width;
 		mHeight = height;
-		mFbo.init(width / 2, height / 2, 1, true, true);
-		mPlane.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
-		mClouds.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
+		mFbo.init(mWidth / 2, mHeight / 2, 1, true, true);
+		mFlierWaves.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
+		mFlierPlane.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
+		mFlierClouds.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
 	}
 
 	@Override
@@ -108,12 +111,14 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 				mContext.getString(R.string.shader_copy_fs));
 		mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
 				mContext.getString(R.string.shader_fill_fs));
-		mPlane.onSurfaceCreated(mContext);
-		mClouds.onSurfaceCreated(mContext);
+		mFlierWaves.onSurfaceCreated(mContext);
+		mFlierPlane.onSurfaceCreated(mContext);
+		mFlierClouds.onSurfaceCreated(mContext);
 	}
 
 	public void setXOffset(float xOffset) {
-		mClouds.setXOffset(xOffset);
+		mFlierWaves.setXOffset(xOffset);
+		mFlierClouds.setXOffset(xOffset);
 	}
 
 }
