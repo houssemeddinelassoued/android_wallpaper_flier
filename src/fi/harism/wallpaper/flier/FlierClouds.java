@@ -189,7 +189,7 @@ public final class FlierClouds {
 		rect.bottom = result[1] / result[3];
 	}
 
-	private class Cloud {
+	private final class Cloud {
 		public int mIndex;
 		public float mSpeed, mXOffset;
 		public final RectF mViewRect = new RectF();
