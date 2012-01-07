@@ -15,7 +15,7 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 
 	// Holder for background colors.
 	private FloatBuffer mBackgroundColors;
-	private FlierClouds mClouds = new FlierClouds(10, 20);
+	private FlierClouds mClouds = new FlierClouds(15, 20);
 	// Application context.
 	private Context mContext;
 	// Fbo for offscreen rendering.

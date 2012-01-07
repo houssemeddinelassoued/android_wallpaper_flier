@@ -36,12 +36,13 @@
     <string name="shader_cloud_vs">
         uniform mat4 uProjM;
         uniform float uXOffset;
-        uniform float uPointSize;
+        uniform float uPointSizeOffset;
         attribute vec3 aPosition;
+        attribute float aPointSize;
         
         void main() {
-            gl_Position = uProjM * vec4(aPosition.x + uXOffset, aPosition.yz, 1.0);
-            gl_PointSize = uPointSize;
+            gl_Position = uProjM * vec4(aPosition.x - uXOffset, aPosition.yz, 1.0);
+            gl_PointSize = aPointSize + uPointSizeOffset;
         }
     </string>
     <string name="shader_cloud_fs">
