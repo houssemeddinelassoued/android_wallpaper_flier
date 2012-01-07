@@ -23,16 +23,16 @@ import android.opengl.GLES20;
  */
 public class FlierFbo {
 
-	// FBO textures and depth buffer size.
-	private int mWidth, mHeight;
-	// FBO handle.
-	private int mFrameBufferHandle = -1;
 	// Optional depth buffer handle.
 	private int mDepthBufferHandle = -1;
+	// FBO handle.
+	private int mFrameBufferHandle = -1;
 	// Optional stencil buffer handle.
 	private int mStencilBufferHandle = -1;
 	// Generated texture handles.
 	private int[] mTextureHandles = {};
+	// FBO textures and depth buffer size.
+	private int mWidth, mHeight;
 
 	/**
 	 * Binds this FBO into use and adjusts viewport to FBO size.

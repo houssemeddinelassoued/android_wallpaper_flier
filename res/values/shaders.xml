@@ -33,24 +33,23 @@
             gl_FragColor = texture2D(sTexture, vTextureCoord);
         }
     </string>
-    <string name="shader_point_vs">
+    <string name="shader_cloud_vs">
         uniform mat4 uProjM;
         uniform float uXOffset;
         uniform float uPointSize;
         attribute vec3 aPosition;
-        varying vec4 vColor;
         
-        vec4 getColor(float);
         void main() {
             gl_Position = uProjM * vec4(aPosition.x + uXOffset, aPosition.yz, 1.0);
             gl_PointSize = uPointSize;
         }
     </string>
-    <string name="shader_point_fs">
+    <string name="shader_cloud_fs">
         precision mediump float;
         uniform vec4 uColor;
+        
         void main() {
-            float dist = length(gl_PointCoord - 0.5);
+            float dist = length(gl_PointCoord - 0.5);            
             if (dist > 0.5) {
                 discard;
             }

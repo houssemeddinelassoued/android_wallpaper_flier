@@ -37,7 +37,7 @@ public final class FlierService extends WallpaperService {
 	 */
 	private final class WallpaperEngine extends Engine {
 
-		//private AnimationHandler mAnimationHandler;
+		// private AnimationHandler mAnimationHandler;
 		// Slightly modified GLSurfaceView.
 		private WallpaperGLSurfaceView mGLSurfaceView;
 		private FlierRenderer mRenderer;
@@ -49,7 +49,7 @@ public final class FlierService extends WallpaperService {
 			// android.os.Debug.waitForDebugger();
 
 			super.onCreate(surfaceHolder);
-			//mAnimationHandler = new AnimationHandler();
+			// mAnimationHandler = new AnimationHandler();
 			mRenderer = new FlierRenderer(FlierService.this);
 			mGLSurfaceView = new WallpaperGLSurfaceView(FlierService.this);
 			mGLSurfaceView.setEGLContextClientVersion(2);
@@ -61,8 +61,8 @@ public final class FlierService extends WallpaperService {
 		@Override
 		public void onDestroy() {
 			super.onDestroy();
-			//mAnimationHandler.finish();
-			//mAnimationHandler = null;
+			// mAnimationHandler.finish();
+			// mAnimationHandler = null;
 			mGLSurfaceView.onDestroy();
 			mGLSurfaceView = null;
 			mRenderer = null;
@@ -83,10 +83,10 @@ public final class FlierService extends WallpaperService {
 			super.onVisibilityChanged(visible);
 			if (visible) {
 				mGLSurfaceView.onResume();
-				//mAnimationHandler.start();
+				// mAnimationHandler.start();
 			} else {
 				mGLSurfaceView.onPause();
-				//mAnimationHandler.finish();
+				// mAnimationHandler.finish();
 			}
 		}
 

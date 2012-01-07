@@ -3,7 +3,6 @@ package fi.harism.wallpaper.flier;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.Vector;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -13,37 +12,25 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 
 public class FlierRenderer implements GLSurfaceView.Renderer {
-	
-	// Vertices for full view rendering.
-	private FloatBuffer mScreenVertices;
+
 	// Holder for background colors.
 	private FloatBuffer mBackgroundColors;
+	private FlierClouds mClouds = new FlierClouds(10, 20);
 	// Application context.
 	private Context mContext;
+	// Fbo for offscreen rendering.
+	private final FlierFbo mFbo = new FlierFbo();
+	private FlierPlane mPlane = new FlierPlane();
+	// Vertices for full view rendering.
+	private FloatBuffer mScreenVertices;
 	// Shader for copying offscreen texture on screen.
 	private final FlierShader mShaderCopy = new FlierShader();
+
 	// Shader for rendering background gradient.
 	private final FlierShader mShaderFill = new FlierShader();
 	// Surface size.
 	private int mWidth, mHeight;
-	// Fbo for offscreen rendering.
-	private final FlierFbo mFbo = new FlierFbo();
-	
-	private FlierPlane mPlane = new FlierPlane();
-	private FlierClouds mClouds = new FlierClouds();
-	
-	public void setXOffset(float xOffset) {
-		
-	}
-	
-	public void animationInit(AnimationObserver observer) {
-		
-	}
-	
-	public void animationFinish() {
-		
-	}
-	
+
 	public FlierRenderer(Context context) {
 		mContext = context;
 
@@ -63,20 +50,28 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 				.put(BACKGROUND_COLOR_BOTTOM).position(0);
 	}
 
+	public void animationFinish() {
+
+	}
+
+	public void animationInit(AnimationObserver observer) {
+
+	}
+
 	@Override
 	public void onDrawFrame(GL10 unused) {
 		// Disable unneeded rendering flags.
 		GLES20.glDisable(GLES20.GL_CULL_FACE);
-		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
 		GLES20.glDisable(GLES20.GL_BLEND);
 
 		// Set render target to fbo.
 		mFbo.bind();
 		mFbo.bindTexture(0);
-		GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_STENCIL_BUFFER_BIT);
-		
+		GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT
+				| GLES20.GL_STENCIL_BUFFER_BIT);
+
 		// Render background gradient.
+		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 		mShaderFill.useProgram();
 		int positionAttribLocation = mShaderFill.getHandle("aPosition");
 		GLES20.glVertexAttribPointer(positionAttribLocation, 2,
@@ -87,10 +82,13 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 				false, 0, mBackgroundColors);
 		GLES20.glEnableVertexAttribArray(colorAttribLocation);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-		
+		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
+
 		// TODO: Render scene.
 		mPlane.render();
-		
+		mClouds.render();
+
 		// Copy FBO to screen buffer.
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
 		GLES20.glViewport(0, 0, mWidth, mHeight);
@@ -101,7 +99,7 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 		GLES20.glEnableVertexAttribArray(vertexAttribLocation);
 		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFbo.getTexture(0));
-		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);		
+		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 	}
 
 	@Override
@@ -109,8 +107,9 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 		mWidth = width;
 		mHeight = height;
 		mFbo.init(width / 2, height / 2, 1, true, true);
-		
+
 		mPlane.init(mFbo.getWidth(), mFbo.getHeight());
+		mClouds.init(mFbo.getWidth(), mFbo.getHeight());
 	}
 
 	@Override
@@ -119,10 +118,15 @@ public class FlierRenderer implements GLSurfaceView.Renderer {
 				mContext.getString(R.string.shader_copy_fs));
 		mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
 				mContext.getString(R.string.shader_fill_fs));
-		
+
 		mPlane.init(mContext);
+		mClouds.init(mContext);
 	}
-	
+
+	public void setXOffset(float xOffset) {
+		mClouds.setXOffset(xOffset);
+	}
+
 	public interface AnimationObserver {
 		public void onAnimationFinished();
 	}
