@@ -70,7 +70,6 @@ public final class FlierService extends WallpaperService {
 			super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep,
 					xPixelOffset, yPixelOffset);
 			mRenderer.setXOffset(xOffset);
-			mGLSurfaceView.requestRender();
 		}
 
 		@Override
