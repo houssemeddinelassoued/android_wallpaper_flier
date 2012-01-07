@@ -77,8 +77,8 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
 
 		// TODO: Render scene.
-		mPlane.render();
-		mClouds.render();
+		mPlane.onDrawFrame();
+		mClouds.onDrawFrame();
 
 		// Copy FBO to screen buffer.
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
@@ -98,8 +98,8 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		mWidth = width;
 		mHeight = height;
 		mFbo.init(width / 2, height / 2, 1, true, true);
-		mPlane.init(mFbo.getWidth(), mFbo.getHeight());
-		mClouds.init(mFbo.getWidth(), mFbo.getHeight());
+		mPlane.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
+		mClouds.onSurfaceChanged(mFbo.getWidth(), mFbo.getHeight());
 	}
 
 	@Override
@@ -108,8 +108,8 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 				mContext.getString(R.string.shader_copy_fs));
 		mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
 				mContext.getString(R.string.shader_fill_fs));
-		mPlane.init(mContext);
-		mClouds.init(mContext);
+		mPlane.onSurfaceCreated(mContext);
+		mClouds.onSurfaceCreated(mContext);
 	}
 
 	public void setXOffset(float xOffset) {

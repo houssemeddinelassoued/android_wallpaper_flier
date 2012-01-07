@@ -37,24 +37,28 @@
         uniform mat4 uProjM;
         uniform float uXOffset;
         uniform float uPointSizeOffset;
+        uniform float uColorMultiplier;
         attribute vec3 aPosition;
         attribute float aPointSize;
+        attribute float aColor;
+        varying vec4 vColor;
         
         void main() {
             gl_Position = uProjM * vec4(aPosition.x - uXOffset, aPosition.yz, 1.0);
             gl_PointSize = aPointSize + uPointSizeOffset;
+            vColor = vec4(vec3(aColor * uColorMultiplier), 1.0);
         }
     </string>
     <string name="shader_cloud_fs">
         precision mediump float;
-        uniform vec4 uColor;
+        varying vec4 vColor;
         
         void main() {
             float dist = length(gl_PointCoord - 0.5);            
             if (dist > 0.5) {
                 discard;
             }
-            gl_FragColor = uColor;
+            gl_FragColor = vColor;
         }
     </string>
     <string name="shader_plane_vs">

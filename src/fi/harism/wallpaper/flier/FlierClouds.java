@@ -15,33 +15,121 @@ import android.os.SystemClock;
 
 public final class FlierClouds {
 
+	private static final int SIZE_FLOAT = 4;
+	private static final int SIZE_POINT = 5;
 	private static final float ZNEAR = 1f, ZFAR = 6f;
 
 	private FloatBuffer mBufferPoints;
 	private final Vector<Cloud> mClouds = new Vector<Cloud>();
 	private float mMaxPointSizeNear, mMaxPointSizeFar;
+	private int mPointsPerCloud;
 	private final float[] mProjM = new float[16];
 	private final RectF mRectNear = new RectF(), mRectFar = new RectF();
+	private long mRenderTime;
 	private final FlierShader mShaderPoint = new FlierShader();
 	private float mXOffset, mXOffsetMultiplier = 4f;
 
 	public FlierClouds(int cloudCount, int pointsPerCloud) {
+		mPointsPerCloud = pointsPerCloud;
+
 		ByteBuffer bBuffer = ByteBuffer.allocateDirect(cloudCount
-				* pointsPerCloud * 4 * 4);
+				* pointsPerCloud * SIZE_POINT * SIZE_FLOAT);
 		mBufferPoints = bBuffer.order(ByteOrder.nativeOrder()).asFloatBuffer();
 
 		for (int i = 0; i < cloudCount; ++i) {
-			Cloud cloud = new Cloud(i * pointsPerCloud, pointsPerCloud);
+			Cloud cloud = new Cloud();
+			cloud.mIndex = i * pointsPerCloud;
 			mClouds.add(cloud);
 		}
 	}
 
-	public void init(Context ctx) {
-		mShaderPoint.setProgram(ctx.getString(R.string.shader_cloud_vs),
-				ctx.getString(R.string.shader_cloud_fs));
+	private void genRandCloud(Cloud cloud) {
+		RectF rect = cloud.mViewRect;
+
+		cloud.mZValue = rand(-ZFAR, -ZNEAR);
+		float t = (-cloud.mZValue - ZNEAR) / (ZFAR - ZNEAR);
+		rect.left = mRectNear.left + t * (mRectFar.left - mRectNear.left);
+		rect.right = mRectNear.right + t * (mRectFar.right - mRectNear.right);
+		rect.top = mRectNear.top + t * (mRectFar.top - mRectNear.top);
+		rect.bottom = rect.top * 0.25f;
+
+		cloud.mWidth = rect.width() * 0.2f;
+		cloud.mHeight = rect.height() * 0.2f;
+		cloud.mSpeed = rand(.3f, .6f);
+
+		float y = rand(rect.bottom, rect.top - cloud.mHeight);
+		float pointSz = mMaxPointSizeNear + t
+				* (mMaxPointSizeFar - mMaxPointSizeNear);
+
+		mBufferPoints.position(cloud.mIndex * SIZE_POINT);
+		for (int i = 0; i < mPointsPerCloud; ++i) {
+			mBufferPoints.put(rand(0, cloud.mWidth))
+					.put(rand(0, cloud.mHeight) + y).put(cloud.mZValue);
+			mBufferPoints.put(rand(pointSz / 3, pointSz));
+			mBufferPoints.put(1f - ((float) i / (mPointsPerCloud * 7)));
+		}
 	}
 
-	public void init(int width, int height) {
+	public void onDrawFrame() {
+		boolean needsSorting = false;
+		long renderTime = SystemClock.uptimeMillis();
+		float t = (float) (renderTime - mRenderTime) / 1000;
+		mRenderTime = renderTime;
+		for (Cloud cloud : mClouds) {
+			cloud.mXOffset -= t * cloud.mSpeed;
+			if (cloud.mXOffset + cloud.mWidth * 3 < cloud.mViewRect.left) {
+				genRandCloud(cloud);
+				cloud.mXOffset = cloud.mViewRect.right + cloud.mWidth;
+				needsSorting = true;
+			}
+		}
+		if (needsSorting) {
+			sortClouds();
+		}
+
+		mShaderPoint.useProgram();
+		int uProjM = mShaderPoint.getHandle("uProjM");
+		int uXOffset = mShaderPoint.getHandle("uXOffset");
+		int uPointSizeOffset = mShaderPoint.getHandle("uPointSizeOffset");
+		int uColorMultiplier = mShaderPoint.getHandle("uColorMultiplier");
+		int aPosition = mShaderPoint.getHandle("aPosition");
+		int aPointSize = mShaderPoint.getHandle("aPointSize");
+		int aColor = mShaderPoint.getHandle("aColor");
+
+		GLES20.glUniformMatrix4fv(uProjM, 1, false, mProjM, 0);
+
+		mBufferPoints.position(0);
+		GLES20.glVertexAttribPointer(aPosition, 3, GLES20.GL_FLOAT, false,
+				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
+		GLES20.glEnableVertexAttribArray(aPosition);
+		mBufferPoints.position(3);
+		GLES20.glVertexAttribPointer(aPointSize, 1, GLES20.GL_FLOAT, false,
+				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
+		GLES20.glEnableVertexAttribArray(aPointSize);
+		mBufferPoints.position(4);
+		GLES20.glVertexAttribPointer(aColor, 1, GLES20.GL_FLOAT, false,
+				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
+		GLES20.glEnableVertexAttribArray(aColor);
+
+		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
+		GLES20.glStencilFunc(GLES20.GL_EQUAL, 0x00, 0xFFFFFFFF);
+		GLES20.glStencilOp(GLES20.GL_KEEP, GLES20.GL_INCR, GLES20.GL_INCR);
+		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+
+		for (Cloud cloud : mClouds) {
+			GLES20.glUniform1f(uXOffset, cloud.mXOffset + mXOffset);
+			GLES20.glUniform1f(uPointSizeOffset, 0f);
+			GLES20.glUniform1f(uColorMultiplier, 1f);
+			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mIndex, mPointsPerCloud);
+			GLES20.glUniform1f(uPointSizeOffset, 4f);
+			GLES20.glUniform1f(uColorMultiplier, 0f);
+			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mIndex, mPointsPerCloud);
+		}
+
+		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
+	}
+
+	public void onSurfaceChanged(int width, int height) {
 		float aspectRatio = (float) height / width;
 		Matrix.frustumM(mProjM, 0, -1f, 1f, -aspectRatio, aspectRatio, ZNEAR,
 				ZFAR);
@@ -59,69 +147,36 @@ public final class FlierClouds {
 		mRectFar.right += mXOffsetMultiplier;
 
 		for (Cloud cloud : mClouds) {
-			cloud.init();
+			genRandCloud(cloud);
+			cloud.mXOffset = rand(cloud.mViewRect.left, cloud.mViewRect.right);
 		}
+		sortClouds();
+		mRenderTime = SystemClock.uptimeMillis();
+	}
+
+	public void onSurfaceCreated(Context ctx) {
+		mShaderPoint.setProgram(ctx.getString(R.string.shader_cloud_vs),
+				ctx.getString(R.string.shader_cloud_fs));
 	}
 
 	private float rand(float min, float max) {
 		return min + (float) Math.random() * (max - min);
 	}
 
-	public void render() {
-		boolean needsSorting = false;
-		for (Cloud cloud : mClouds) {
-			needsSorting |= cloud.animate();
-		}
-		if (needsSorting) {
-			final Comparator<Cloud> comparator = new Comparator<Cloud>() {
-				@Override
-				public int compare(Cloud arg0, Cloud arg1) {
-					return arg0.getZ() >= arg1.getZ() ? -1 : 1;
-				}
-			};
-			Collections.sort(mClouds, comparator);
-		}
-
-		mShaderPoint.useProgram();
-		int uProjM = mShaderPoint.getHandle("uProjM");
-		int uXOffset = mShaderPoint.getHandle("uXOffset");
-		int uPointSizeOffset = mShaderPoint.getHandle("uPointSizeOffset");
-		int uColor = mShaderPoint.getHandle("uColor");
-		int aPosition = mShaderPoint.getHandle("aPosition");
-		int aPointSize = mShaderPoint.getHandle("aPointSize");
-
-		GLES20.glUniformMatrix4fv(uProjM, 1, false, mProjM, 0);
-
-		mBufferPoints.position(0);
-		GLES20.glVertexAttribPointer(aPosition, 3, GLES20.GL_FLOAT, false,
-				4 * 4, mBufferPoints);
-		GLES20.glEnableVertexAttribArray(aPosition);
-		mBufferPoints.position(3);
-		GLES20.glVertexAttribPointer(aPointSize, 1, GLES20.GL_FLOAT, false,
-				4 * 4, mBufferPoints);
-		GLES20.glEnableVertexAttribArray(aPointSize);
-
-		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
-		GLES20.glStencilFunc(GLES20.GL_EQUAL, 0x00, 0xFFFFFFFF);
-		GLES20.glStencilOp(GLES20.GL_KEEP, GLES20.GL_INCR, GLES20.GL_INCR);
-
-		for (Cloud cloud : mClouds) {
-			GLES20.glUniform1f(uXOffset, cloud.getXOffset() + mXOffset);
-			GLES20.glUniform1f(uPointSizeOffset, 0f);
-			GLES20.glUniform4f(uColor, 1f, 1f, 1f, 1f);
-			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.getIndex(),
-					cloud.getPointCount());
-			GLES20.glUniform1f(uPointSizeOffset, 4f);
-			GLES20.glUniform4f(uColor, 0f, 0f, 0f, 1f);
-			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.getIndex(),
-					cloud.getPointCount());
-		}
-
-		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
-	}
-
 	public void setXOffset(float xOffset) {
 		mXOffset = xOffset * mXOffsetMultiplier;
+	}
+
+	public void sortClouds() {
+		final Comparator<Cloud> comparator = new Comparator<Cloud>() {
+			@Override
+			public int compare(Cloud arg0, Cloud arg1) {
+				float z0 = arg0.mZValue;
+				float z1 = arg1.mZValue;
+				return z0 == z1 ? 0 : z0 < z1 ? 1 : -1;
+			}
+		};
+		Collections.sort(mClouds, comparator);
 	}
 
 	private void unproject(float[] projInv, RectF rect, float z) {
@@ -135,78 +190,10 @@ public final class FlierClouds {
 	}
 
 	private class Cloud {
-		private int mIndex, mPointCount;
-		private long mInitTime;
-		private float mSpeed, mXOffset;
-		private RectF mViewRect = new RectF(), mContentRect = new RectF();
-
-		public Cloud(int index, int pointCount) {
-			mIndex = index;
-			mPointCount = pointCount;
-		}
-
-		public boolean animate() {
-			float t = (float) (SystemClock.uptimeMillis() - mInitTime) / 30000;
-			mXOffset -= mSpeed * t;
-			if (mXOffset + mContentRect.width() * 3f < mViewRect.left) {
-				genRandCloud();
-				mXOffset = mViewRect.right + mContentRect.width();
-				mSpeed = rand(.1f, .2f);
-				mInitTime = SystemClock.uptimeMillis();
-				return true;
-			}
-			return false;
-		}
-
-		private void genRandCloud() {
-			float z = rand(ZFAR, ZNEAR);
-			float t = (z - ZNEAR) / (ZFAR - ZNEAR);
-			mViewRect.left = mRectNear.left + t
-					* (mRectFar.left - mRectNear.left);
-			mViewRect.right = mRectNear.right + t
-					* (mRectFar.right - mRectNear.right);
-			mViewRect.top = mRectNear.top + t * (mRectFar.top - mRectNear.top);
-			mViewRect.bottom = mViewRect.top * 0.25f;
-
-			mContentRect.right = mViewRect.width() * 0.2f;
-			mContentRect.top = mViewRect.height() * 0.2f;
-
-			float y = rand(mViewRect.bottom,
-					mViewRect.top - mContentRect.height());
-			float ptSz = mMaxPointSizeNear + t
-					* (mMaxPointSizeFar - mMaxPointSizeNear);
-
-			mBufferPoints.position(mIndex * 4);
-			for (int i = 0; i < mPointCount; ++i) {
-				mBufferPoints.put(rand(0, mContentRect.width()))
-						.put(rand(0, mContentRect.height()) + y).put(-z);
-				mBufferPoints.put(rand(ptSz / 3, ptSz));
-			}
-		}
-
-		public int getIndex() {
-			return mIndex;
-		}
-
-		public int getPointCount() {
-			return mPointCount;
-		}
-
-		public float getXOffset() {
-			return mXOffset;
-		}
-
-		public float getZ() {
-			return mBufferPoints.get(mIndex * 4 + 2);
-		}
-
-		public void init() {
-			genRandCloud();
-			mXOffset = rand(mViewRect.left - mContentRect.width(),
-					mViewRect.right + mContentRect.width());
-			mSpeed = rand(.1f, .2f);
-			mInitTime = SystemClock.uptimeMillis();
-		}
+		public int mIndex;
+		public float mSpeed, mXOffset;
+		public final RectF mViewRect = new RectF();
+		public float mWidth, mHeight, mZValue;
 	}
 
 }

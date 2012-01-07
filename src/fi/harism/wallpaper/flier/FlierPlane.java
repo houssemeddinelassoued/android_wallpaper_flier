@@ -33,32 +33,23 @@ public final class FlierPlane {
 		mBufferLineIndices.put(indices).position(0);
 	}
 
-	public void init(Context ctx) {
-		mShaderPlane.setProgram(ctx.getString(R.string.shader_plane_vs),
-				ctx.getString(R.string.shader_plane_fs));
-	}
-
-	public void init(int width, int height) {
-		float aspectRatio = (float) height / width;
-		Matrix.orthoM(mProjM, 0, -3f, 3f, -aspectRatio * 2f, aspectRatio * 4f,
-				1f, 21f);
-		Matrix.setLookAtM(mViewM, 0, 0, 1f, 5f, 0, 0, 0, 0f, 1f, 0f);
-	}
-
-	public void render() {
+	public void onDrawFrame() {
 		mShaderPlane.useProgram();
 
+		long time = SystemClock.uptimeMillis();
+		float rx = sin(time, 4000, 10f);
+		float rz = sin(time, 6234, 10f);
+		float ry = (float) (time % (360 * 30)) / 30;
+		float scale = 0.75f + sin(time, 8345, .25f);
+
 		final float[] modelViewProjM = new float[16];
-		float rx = (float) Math.sin(Math.PI
-				* (SystemClock.uptimeMillis() % 3000) / 1500) * 10f;
-		float rz = (float) Math.cos(Math.PI
-				* (SystemClock.uptimeMillis() % 4000) / 2000) * 10f;
-		float ry = (float) (SystemClock.uptimeMillis() % (360 * 30)) / 30;
 		Matrix.setRotateM(modelViewProjM, 0, rx, 1f, 0, 0);
 		Matrix.rotateM(modelViewProjM, 0, ry, 0, 1f, 0);
 		Matrix.rotateM(modelViewProjM, 0, rz, 0, 0, 1f);
 
 		Matrix.translateM(modelViewProjM, 0, 2f, .5f, 0f);
+
+		Matrix.scaleM(modelViewProjM, 0, scale, scale, scale);
 
 		Matrix.multiplyMM(modelViewProjM, 0, mViewM, 0, modelViewProjM, 0);
 		Matrix.multiplyMM(modelViewProjM, 0, mProjM, 0, modelViewProjM, 0);
@@ -88,6 +79,24 @@ public final class FlierPlane {
 				mBufferLineIndices);
 
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
+	}
+
+	public void onSurfaceChanged(int width, int height) {
+		float aspectRatio = (float) height / width;
+		Matrix.orthoM(mProjM, 0, -3f, 3f, -aspectRatio * 2f, aspectRatio * 4f,
+				1f, 21f);
+		Matrix.setLookAtM(mViewM, 0, 0, 1f, 5f, 0, 0, 0, 0f, 1f, 0f);
+	}
+
+	public void onSurfaceCreated(Context ctx) {
+		mShaderPlane.setProgram(ctx.getString(R.string.shader_plane_vs),
+				ctx.getString(R.string.shader_plane_fs));
+	}
+
+	private float sin(long time, long frequency, float multiplier) {
+		return multiplier
+				* (float) Math.sin((2 * Math.PI * (time % frequency))
+						/ frequency);
 	}
 
 }
