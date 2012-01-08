@@ -31,6 +31,8 @@
         
         void main() {
             gl_FragColor = texture2D(sTexture, vTextureCoord);
+            float brightness = clamp(1.2 - length(vTextureCoord - 0.5) * 1.5, 0.0, 1.0);
+            gl_FragColor.rgb *= sqrt(brightness);
         }
     </string>
     <string name="shader_cloud_vs">
