@@ -37,7 +37,7 @@ public final class FlierClouds {
 	// Float size in bytes.
 	private static final int SIZE_FLOAT = 4;
 	// Number of floats in point.
-	private static final int SIZE_POINT = 5;
+	private static final int SIZE_POINT = 4;
 	// Z near and far clipping planes.
 	private static final float ZNEAR = 1f, ZFAR = 6f;
 
@@ -110,8 +110,7 @@ public final class FlierClouds {
 		for (int i = 0; i < mPointsPerCloud; ++i) {
 			mBufferPoints.put(rand(0, cloud.mWidth))
 					.put(rand(0, cloud.mHeight) + y).put(cloud.mZValue);
-			mBufferPoints.put(rand(pointSz / 3, pointSz));
-			mBufferPoints.put(1f - ((float) i / (mPointsPerCloud * 7)));
+			mBufferPoints.put(rand(pointSz / 2, pointSz));
 		}
 	}
 
@@ -139,10 +138,9 @@ public final class FlierClouds {
 		int uProjM = mShaderPoint.getHandle("uProjM");
 		int uXOffset = mShaderPoint.getHandle("uXOffset");
 		int uPointSizeOffset = mShaderPoint.getHandle("uPointSizeOffset");
-		int uColorMultiplier = mShaderPoint.getHandle("uColorMultiplier");
+		int uColor = mShaderPoint.getHandle("uColor");
 		int aPosition = mShaderPoint.getHandle("aPosition");
 		int aPointSize = mShaderPoint.getHandle("aPointSize");
-		int aColor = mShaderPoint.getHandle("aColor");
 
 		GLES20.glUniformMatrix4fv(uProjM, 1, false, mProjM, 0);
 
@@ -154,10 +152,6 @@ public final class FlierClouds {
 		GLES20.glVertexAttribPointer(aPointSize, 1, GLES20.GL_FLOAT, false,
 				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
 		GLES20.glEnableVertexAttribArray(aPointSize);
-		mBufferPoints.position(4);
-		GLES20.glVertexAttribPointer(aColor, 1, GLES20.GL_FLOAT, false,
-				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
-		GLES20.glEnableVertexAttribArray(aColor);
 
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
 		GLES20.glStencilFunc(GLES20.GL_EQUAL, 0x00, 0xFFFFFFFF);
@@ -167,11 +161,11 @@ public final class FlierClouds {
 		for (Cloud cloud : mClouds) {
 			GLES20.glUniform1f(uXOffset, cloud.mXOffset + mXOffset);
 			GLES20.glUniform1f(uPointSizeOffset, 0f);
-			GLES20.glUniform1f(uColorMultiplier, 1f);
+			GLES20.glUniform1f(uColor, 1f);
 			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mStartIndex,
 					mPointsPerCloud);
 			GLES20.glUniform1f(uPointSizeOffset, 4f);
-			GLES20.glUniform1f(uColorMultiplier, 0f);
+			GLES20.glUniform1f(uColor, .5f);
 			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mStartIndex,
 					mPointsPerCloud);
 		}

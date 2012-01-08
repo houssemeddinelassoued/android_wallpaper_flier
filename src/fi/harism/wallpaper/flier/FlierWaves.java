@@ -122,7 +122,7 @@ public final class FlierWaves {
 				bBuffer);
 		GLES20.glEnableVertexAttribArray(aPosition);
 
-		GLES20.glUniform1f(uBrightness, .5f);
+		GLES20.glUniform1f(uBrightness, .6f);
 		GLES20.glUniform1f(uPointSize, mWaveSize + 3);
 		GLES20.glDrawArrays(GLES20.GL_POINTS, 0, 1);
 
