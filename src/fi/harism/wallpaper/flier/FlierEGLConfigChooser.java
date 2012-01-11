@@ -1,3 +1,19 @@
+/*
+   Copyright 2012 Harri Smått
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package fi.harism.wallpaper.flier;
 
 import javax.microedition.khronos.egl.EGL10;
@@ -6,11 +22,23 @@ import javax.microedition.khronos.egl.EGLDisplay;
 
 import android.opengl.GLSurfaceView;
 
+/**
+ * EGLConfigChooser for selecting highest available RGB precision plus depth
+ * buffer precision if needed. As for alpha and stencil buffer (and depth buffer
+ * if set to false), lowest ones are preferred.
+ */
 public final class FlierEGLConfigChooser implements
 		GLSurfaceView.EGLConfigChooser {
 
 	private boolean mNeedsDepth;
 
+	/**
+	 * Default constructor.
+	 * 
+	 * @param needsDepth
+	 *            If true, will try to find config with highest depth buffer
+	 *            precision on top of RGB precision.
+	 */
 	public FlierEGLConfigChooser(boolean needsDepth) {
 		mNeedsDepth = needsDepth;
 	}
@@ -59,6 +87,9 @@ public final class FlierEGLConfigChooser implements
 		return highestConfig;
 	}
 
+	/**
+	 * Getter for single attribute value from EGLConfig.
+	 */
 	private int getConfigAttrib(EGL10 egl, EGLDisplay display,
 			EGLConfig config, int attribute, int defaultValue, int[] temp) {
 		if (egl.eglGetConfigAttrib(display, config, attribute, temp)) {
