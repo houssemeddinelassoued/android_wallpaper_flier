@@ -80,6 +80,7 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		// Disable unneeded rendering flags.
 		GLES20.glDisable(GLES20.GL_CULL_FACE);
 		GLES20.glDisable(GLES20.GL_BLEND);
+		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 
 		// Set render target to fbo.
 		mFbo.bind();
@@ -88,7 +89,6 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 				| GLES20.GL_STENCIL_BUFFER_BIT);
 
 		// Render background gradient.
-		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 		mShaderFill.useProgram();
 		int positionAttribLocation = mShaderFill.getHandle("aPosition");
 		GLES20.glVertexAttribPointer(positionAttribLocation, 2,
@@ -99,8 +99,6 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 				false, 0, mBackgroundColors);
 		GLES20.glEnableVertexAttribArray(colorAttribLocation);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
 
 		// TODO: Render scene.
 		mFlierWaves.onDrawFrame();

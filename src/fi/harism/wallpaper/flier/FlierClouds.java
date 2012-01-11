@@ -156,7 +156,6 @@ public final class FlierClouds {
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
 		GLES20.glStencilFunc(GLES20.GL_EQUAL, 0x00, 0xFFFFFFFF);
 		GLES20.glStencilOp(GLES20.GL_KEEP, GLES20.GL_INCR, GLES20.GL_INCR);
-		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 
 		for (Cloud cloud : mClouds) {
 			GLES20.glUniform1f(uXOffset, cloud.mXOffset + mXOffset);

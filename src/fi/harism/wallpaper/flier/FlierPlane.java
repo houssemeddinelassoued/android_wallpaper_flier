@@ -90,6 +90,8 @@ public final class FlierPlane {
 				3 * 4, mBufferVertices);
 		GLES20.glEnableVertexAttribArray(aPosition);
 
+		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
 		GLES20.glStencilFunc(GLES20.GL_ALWAYS, 0x01, 0xFFFFFFFF);
 		GLES20.glStencilOp(GLES20.GL_REPLACE, GLES20.GL_REPLACE,
@@ -106,6 +108,7 @@ public final class FlierPlane {
 		GLES20.glDrawElements(GLES20.GL_LINES, 18, GLES20.GL_UNSIGNED_BYTE,
 				mBufferLineIndices);
 
+		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 	}
 
