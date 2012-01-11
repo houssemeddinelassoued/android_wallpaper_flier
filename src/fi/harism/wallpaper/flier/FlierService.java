@@ -50,7 +50,6 @@ public final class FlierService extends WallpaperService {
 			mRenderer = new FlierRenderer(FlierService.this);
 			mGLSurfaceView = new WallpaperGLSurfaceView(FlierService.this);
 			mGLSurfaceView.setEGLContextClientVersion(2);
-			mGLSurfaceView.setEGLConfigChooser(8, 8, 8, 0, 0, 0);
 			mGLSurfaceView.setRenderer(mRenderer);
 			mGLSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 		}
