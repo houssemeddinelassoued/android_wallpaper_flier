@@ -99,12 +99,12 @@ public final class FlierPlane {
 
 		GLES20.glEnable(GLES20.GL_POLYGON_OFFSET_FILL);
 		GLES20.glPolygonOffset(1f, 1f);
-		GLES20.glUniform4f(uColor, .8f, .8f, .8f, 1f);
+		GLES20.glUniform3f(uColor, .8f, .8f, .8f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6);
 		GLES20.glDisable(GLES20.GL_POLYGON_OFFSET_FILL);
 
 		GLES20.glLineWidth(1f);
-		GLES20.glUniform4f(uColor, .2f, .2f, .2f, 0f);
+		GLES20.glUniform3f(uColor, .2f, .2f, .2f);
 		GLES20.glDrawElements(GLES20.GL_LINES, 18, GLES20.GL_UNSIGNED_BYTE,
 				mBufferLineIndices);
 

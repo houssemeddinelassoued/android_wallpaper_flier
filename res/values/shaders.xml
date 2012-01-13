@@ -71,12 +71,12 @@
     </string>
     <string name="shader_plane_fs">
         precision mediump float;
-        uniform vec4 uColor;
+        uniform vec3 uColor;
         void main() {
-            gl_FragColor = uColor;
+            gl_FragColor = vec4(uColor, 1.0);
         }
     </string>
-    <string name="shader_wave_point_vs">
+    <string name="shader_wave_texture_vs">
         uniform float uPointSize;
         attribute vec2 aPosition;
         
@@ -85,16 +85,15 @@
             gl_PointSize = uPointSize;
         }
     </string>
-    <string name="shader_wave_point_fs">
+    <string name="shader_wave_texture_fs">
         precision mediump float;
         uniform float uBrightness;
         
         void main() {
-            float dist = length(gl_PointCoord - 0.5);            
-            if (dist &lt;= 0.5) {
-                gl_FragColor.r = uBrightness;
-            } else {
+            if (length(gl_PointCoord - 0.5) >= 0.5) {
                 discard;
+            } else {
+                gl_FragColor.r = uBrightness;
             }
         }
     </string>
@@ -114,13 +113,13 @@
     <string name="shader_wave_fs">
         precision mediump float;
         uniform sampler2D sTexture;
-        uniform vec4 uColor;
+        uniform vec3 uColor;
         varying vec2 vTexturePos;
         
         void main() {
             float brightness = texture2D(sTexture, vTexturePos).r;
-            if (texture2D(sTexture, vTexturePos).r != 0.0) {
-                gl_FragColor = uColor * brightness;
+            if (texture2D(sTexture, vTexturePos).r > 0.0) {
+                gl_FragColor = vec4(uColor * brightness, 1.0);
             } else {
                 discard;
             }
