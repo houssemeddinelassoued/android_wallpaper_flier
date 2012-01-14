@@ -35,9 +35,11 @@ public final class FlierPlane {
 	private ByteBuffer mBufferLineIndices;
 	// Vertices buffer.
 	private FloatBuffer mBufferVertices;
+	// Outline line width;
+	private int mLineWidth;
 	// Projection and view matrices.
 	private final float[] mProjM = new float[16], mViewM = new float[16];
-	// Plane shader.
+	// Plane shader used for rendering both lines and surfaces.
 	private final FlierShader mShaderPlane = new FlierShader();
 
 	/**
@@ -64,8 +66,6 @@ public final class FlierPlane {
 	 * Called from renderer for rendering paper plane into the scene.
 	 */
 	public void onDrawFrame() {
-		mShaderPlane.useProgram();
-
 		long time = SystemClock.uptimeMillis();
 		float rx = sin(time, 4000, 2f) * mAspectRatio;
 		float rz = sin(time, 6234, 2f) * mAspectRatio;
@@ -84,6 +84,7 @@ public final class FlierPlane {
 		Matrix.multiplyMM(modelViewProjM, 0, mViewM, 0, modelViewProjM, 0);
 		Matrix.multiplyMM(modelViewProjM, 0, mProjM, 0, modelViewProjM, 0);
 
+		mShaderPlane.useProgram();
 		int uModelViewProjM = mShaderPlane.getHandle("uModelViewProjM");
 		int uColor = mShaderPlane.getHandle("uColor");
 		int aPosition = mShaderPlane.getHandle("aPosition");
@@ -93,7 +94,7 @@ public final class FlierPlane {
 		GLES20.glEnableVertexAttribArray(aPosition);
 
 		GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-		GLES20.glDepthFunc(GLES20.GL_LEQUAL);
+		GLES20.glDepthFunc(GLES20.GL_LESS);
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
 		GLES20.glStencilFunc(GLES20.GL_ALWAYS, 0x01, 0xFFFFFFFF);
 		GLES20.glStencilOp(GLES20.GL_REPLACE, GLES20.GL_REPLACE,
@@ -105,10 +106,15 @@ public final class FlierPlane {
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6);
 		GLES20.glDisable(GLES20.GL_POLYGON_OFFSET_FILL);
 
-		GLES20.glLineWidth(1f);
+		GLES20.glLineWidth(mLineWidth);
 		GLES20.glUniform3f(uColor, .2f, .2f, .2f);
-		GLES20.glDrawElements(GLES20.GL_LINES, 18, GLES20.GL_UNSIGNED_BYTE,
-				mBufferLineIndices);
+		GLES20.glDrawElements(GLES20.GL_LINES, mBufferLineIndices.capacity(),
+				GLES20.GL_UNSIGNED_BYTE, mBufferLineIndices);
+
+		GLES20.glLineWidth(mLineWidth + .5f);
+		GLES20.glUniform3f(uColor, .5f, .5f, .5f);
+		GLES20.glDrawElements(GLES20.GL_LINES, mBufferLineIndices.capacity(),
+				GLES20.GL_UNSIGNED_BYTE, mBufferLineIndices);
 
 		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
@@ -123,6 +129,7 @@ public final class FlierPlane {
 	 *            Height in pixels.
 	 */
 	public void onSurfaceChanged(int width, int height) {
+		mLineWidth = Math.max(1, Math.min(width, height) / 160);
 		mAspectRatio = (float) height / width;
 		Matrix.orthoM(mProjM, 0, -1f, 1f, -mAspectRatio, mAspectRatio, 1f, 21f);
 		Matrix.setLookAtM(mViewM, 0, 0, 1f, 5f, 0, 0, 0, 0f, 1f, 0f);
