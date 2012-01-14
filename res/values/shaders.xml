@@ -36,28 +36,32 @@
             gl_FragColor.rgb *= 1.0 - brightness;
         }
     </string>
-    <string name="shader_cloud_vs">
-        uniform mat4 uProjM;
-        uniform float uXOffset;
-        uniform float uPointSizeOffset;
-        attribute vec3 aPosition;
-        attribute float aPointSize;
+    <string name="shader_point_vs">
+        uniform mat4 uModelViewProjM;
+        uniform vec3 uPointPosition;
+        uniform float uPointSize;
+        uniform vec2 uAspectRatio;
+        attribute vec2 aPosition;
+        varying vec2 vPosition;
         
         void main() {
-            gl_Position = uProjM * vec4(aPosition.x - uXOffset, aPosition.yz, 1.0);
-            gl_PointSize = aPointSize + uPointSizeOffset;
+            gl_Position = uModelViewProjM * vec4(uPointPosition, 1.0);
+            gl_Position /= gl_Position.w;
+            gl_Position.xy += aPosition * uAspectRatio * uPointSize;
+            vPosition = aPosition;
         }
     </string>
     <string name="shader_cloud_fs">
         precision mediump float;
-        uniform float uColor;
+        uniform vec3 uColor;
+        varying vec2 vPosition;
         
         void main() {
-            float dist = length(gl_PointCoord - 0.5);            
-            if (dist > 0.5) {
+            if (length(vPosition) >= 1.0) {
                 discard;
             } else {
-                gl_FragColor.rgb = vec3(uColor * (1.3 - (gl_PointCoord.x + gl_PointCoord.y) * 0.4));
+                vec2 pos = vPosition + 1.0;
+                gl_FragColor.rgb = uColor * (1.3 - (pos.x + 2.0 - pos.y) * 0.2);
                 gl_FragColor.a = 1.0;
             }
         }
@@ -76,21 +80,13 @@
             gl_FragColor = vec4(uColor, 1.0);
         }
     </string>
-    <string name="shader_wave_texture_vs">
-        uniform float uPointSize;
-        attribute vec2 aPosition;
-        
-        void main() {
-            gl_Position = vec4(aPosition, 0.0, 1.0);
-            gl_PointSize = uPointSize;
-        }
-    </string>
     <string name="shader_wave_texture_fs">
         precision mediump float;
         uniform float uBrightness;
+        varying vec2 vPosition;
         
         void main() {
-            if (length(gl_PointCoord - 0.5) >= 0.5) {
+            if (length(vPosition) >= 1.0) {
                 discard;
             } else {
                 gl_FragColor.r = uBrightness;

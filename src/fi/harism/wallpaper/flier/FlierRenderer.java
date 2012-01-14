@@ -38,7 +38,7 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 	private Context mContext;
 	// Fbo for offscreen rendering.
 	private final FlierFbo mFbo = new FlierFbo();
-	private final FlierClouds mFlierClouds = new FlierClouds(15, 15);
+	private final FlierClouds mFlierClouds = new FlierClouds(10, 10);
 	private final FlierPlane mFlierPlane = new FlierPlane();
 	private final FlierWaves mFlierWaves = new FlierWaves();
 	// Vertices for full view rendering.

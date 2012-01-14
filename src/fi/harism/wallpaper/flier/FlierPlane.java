@@ -29,6 +29,8 @@ import android.os.SystemClock;
  * Class for handling paper plane animation and rendering.
  */
 public final class FlierPlane {
+	// FBO aspect ratio.
+	private float mAspectRatio;
 	// Buffer for line indices.
 	private ByteBuffer mBufferLineIndices;
 	// Vertices buffer.
@@ -65,17 +67,17 @@ public final class FlierPlane {
 		mShaderPlane.useProgram();
 
 		long time = SystemClock.uptimeMillis();
-		float rx = sin(time, 4000, 10f);
-		float rz = sin(time, 6234, 10f);
-		float ry = (float) (time % (360 * 30)) / 30;
-		float scale = 0.75f + sin(time, 8345, .25f);
+		float rx = sin(time, 4000, 2f) * mAspectRatio;
+		float rz = sin(time, 6234, 2f) * mAspectRatio;
+		float ry = (float) (time % (360 * 60)) / 60;
+		float scale = (0.15f + sin(time, 8345, .025f)) * mAspectRatio;
 
 		final float[] modelViewProjM = new float[16];
 		Matrix.setRotateM(modelViewProjM, 0, rx, 1f, 0, 0);
 		Matrix.rotateM(modelViewProjM, 0, ry, 0, 1f, 0);
 		Matrix.rotateM(modelViewProjM, 0, rz, 0, 0, 1f);
 
-		Matrix.translateM(modelViewProjM, 0, 2f, .5f, 0f);
+		Matrix.translateM(modelViewProjM, 0, 1f, -mAspectRatio / 5f, 0f);
 
 		Matrix.scaleM(modelViewProjM, 0, scale, scale, scale);
 
@@ -121,9 +123,8 @@ public final class FlierPlane {
 	 *            Height in pixels.
 	 */
 	public void onSurfaceChanged(int width, int height) {
-		float aspectRatio = (float) height / width;
-		Matrix.orthoM(mProjM, 0, -3f, 3f, -aspectRatio * 2f, aspectRatio * 4f,
-				1f, 21f);
+		mAspectRatio = (float) height / width;
+		Matrix.orthoM(mProjM, 0, -1f, 1f, -mAspectRatio, mAspectRatio, 1f, 21f);
 		Matrix.setLookAtM(mViewM, 0, 0, 1f, 5f, 0, 0, 0, 0f, 1f, 0f);
 	}
 

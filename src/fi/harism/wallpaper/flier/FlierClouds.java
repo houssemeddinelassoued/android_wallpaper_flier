@@ -17,8 +17,6 @@
 package fi.harism.wallpaper.flier;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Vector;
@@ -34,19 +32,20 @@ import android.os.SystemClock;
  */
 public final class FlierClouds {
 
-	// Float size in bytes.
-	private static final int SIZE_FLOAT = 4;
-	// Number of floats in point.
-	private static final int SIZE_POINT = 4;
+	// Maximum point sizes for near and far clipping plane.
+	private static final float MAX_POINTSIZE_NEAR = .2f,
+			MAX_POINTSIZE_FAR = .1f;
+	// Border size for cloud points.
+	private static final float POINT_BORDER_SIZE = .015f;
+	// Multiplier for x -offset scrolling.
+	private static final float X_OFFSET_MULTIPLIER = 2f;
 	// Z near and far clipping planes.
 	private static final float ZNEAR = 1f, ZFAR = 6f;
 
-	// Buffer for holding vertex/point data.
-	private FloatBuffer mBufferPoints;
+	// Projection matrix aspect ratio.
+	private float mAspectRatioX, mAspectRatioY;
 	// Cloud storage.
 	private final Vector<Cloud> mClouds = new Vector<Cloud>();
-	// Maximum point sizes for near and far clipping plane.
-	private float mMaxPointSizeNear, mMaxPointSizeFar;
 	// Number of points per cloud.
 	private int mPointsPerCloud;
 	// Projection matrix.
@@ -57,8 +56,10 @@ public final class FlierClouds {
 	private long mRenderTime;
 	// Shader for rendering points clouds consist of.
 	private final FlierShader mShaderPoint = new FlierShader();
-	// X -offset for handling scrolling and multiplier for adjusting its amount.
-	private float mXOffset, mXOffsetMultiplier = 4f;
+	// Point shader vertices.
+	private ByteBuffer mVertices;
+	// X -offset for handling scrolling.
+	private float mXOffset;
 
 	/**
 	 * Default constructor.
@@ -71,13 +72,14 @@ public final class FlierClouds {
 	public FlierClouds(int cloudCount, int pointsPerCloud) {
 		mPointsPerCloud = pointsPerCloud;
 
-		ByteBuffer bBuffer = ByteBuffer.allocateDirect(cloudCount
-				* pointsPerCloud * SIZE_POINT * SIZE_FLOAT);
-		mBufferPoints = bBuffer.order(ByteOrder.nativeOrder()).asFloatBuffer();
+		final byte[] COORDS = { -1, 1, -1, -1, 1, 1, 1, -1 };
+		mVertices = ByteBuffer.allocateDirect(4 * 2);
+		mVertices.put(COORDS).position(0);
 
 		for (int i = 0; i < cloudCount; ++i) {
 			Cloud cloud = new Cloud();
-			cloud.mStartIndex = i * pointsPerCloud;
+			cloud.mPointPositions = new float[pointsPerCloud * 2];
+			cloud.mPointSizes = new float[pointsPerCloud];
 			mClouds.add(cloud);
 		}
 	}
@@ -96,21 +98,24 @@ public final class FlierClouds {
 		rect.left = mRectNear.left + t * (mRectFar.left - mRectNear.left);
 		rect.right = mRectNear.right + t * (mRectFar.right - mRectNear.right);
 		rect.top = mRectNear.top + t * (mRectFar.top - mRectNear.top);
-		rect.bottom = rect.top * 0.25f;
+		rect.bottom = rect.top * 0.4f;
 
 		cloud.mWidth = rect.width() * 0.2f;
 		cloud.mHeight = rect.height() * 0.2f;
 		cloud.mSpeed = rand(.3f, .6f);
 
 		float y = rand(rect.bottom, rect.top - cloud.mHeight);
-		float pointSz = mMaxPointSizeNear + t
-				* (mMaxPointSizeFar - mMaxPointSizeNear);
+		float maxPointSz = MAX_POINTSIZE_NEAR + t
+				* (MAX_POINTSIZE_FAR - MAX_POINTSIZE_NEAR);
 
-		mBufferPoints.position(cloud.mStartIndex * SIZE_POINT);
 		for (int i = 0; i < mPointsPerCloud; ++i) {
-			mBufferPoints.put(rand(0, cloud.mWidth))
-					.put(rand(0, cloud.mHeight) + y).put(cloud.mZValue);
-			mBufferPoints.put(rand(pointSz / 2, pointSz));
+			float pointSz = rand(maxPointSz / 2, maxPointSz);
+			cloud.mPointSizes[i] = pointSz;
+			cloud.mPointPositions[i * 2 + 0] = rand(pointSz, cloud.mWidth
+					- pointSz);
+			cloud.mPointPositions[i * 2 + 1] = rand(pointSz, cloud.mHeight
+					- pointSz)
+					+ y;
 		}
 	}
 
@@ -124,7 +129,7 @@ public final class FlierClouds {
 		mRenderTime = renderTime;
 		for (Cloud cloud : mClouds) {
 			cloud.mXOffset -= t * cloud.mSpeed;
-			if (cloud.mXOffset + cloud.mWidth * 3 < cloud.mViewRect.left) {
+			if (cloud.mXOffset + cloud.mWidth < cloud.mViewRect.left) {
 				genRandCloud(cloud);
 				cloud.mXOffset = cloud.mViewRect.right + cloud.mWidth;
 				needsSorting = true;
@@ -135,38 +140,43 @@ public final class FlierClouds {
 		}
 
 		mShaderPoint.useProgram();
-		int uProjM = mShaderPoint.getHandle("uProjM");
-		int uXOffset = mShaderPoint.getHandle("uXOffset");
-		int uPointSizeOffset = mShaderPoint.getHandle("uPointSizeOffset");
+		int uModelViewProjM = mShaderPoint.getHandle("uModelViewProjM");
+		int uPointPosition = mShaderPoint.getHandle("uPointPosition");
+		int uPointSize = mShaderPoint.getHandle("uPointSize");
+		int uAspectRatio = mShaderPoint.getHandle("uAspectRatio");
 		int uColor = mShaderPoint.getHandle("uColor");
 		int aPosition = mShaderPoint.getHandle("aPosition");
-		int aPointSize = mShaderPoint.getHandle("aPointSize");
 
-		GLES20.glUniformMatrix4fv(uProjM, 1, false, mProjM, 0);
-
-		mBufferPoints.position(0);
-		GLES20.glVertexAttribPointer(aPosition, 3, GLES20.GL_FLOAT, false,
-				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
+		GLES20.glUniformMatrix4fv(uModelViewProjM, 1, false, mProjM, 0);
+		GLES20.glUniform2f(uAspectRatio, 1f / mAspectRatioX, 1f / mAspectRatioY);
+		GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_BYTE, false, 0,
+				mVertices);
 		GLES20.glEnableVertexAttribArray(aPosition);
-		mBufferPoints.position(3);
-		GLES20.glVertexAttribPointer(aPointSize, 1, GLES20.GL_FLOAT, false,
-				SIZE_POINT * SIZE_FLOAT, mBufferPoints);
-		GLES20.glEnableVertexAttribArray(aPointSize);
 
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
 		GLES20.glStencilFunc(GLES20.GL_EQUAL, 0x00, 0xFFFFFFFF);
 		GLES20.glStencilOp(GLES20.GL_KEEP, GLES20.GL_INCR, GLES20.GL_INCR);
 
 		for (Cloud cloud : mClouds) {
-			GLES20.glUniform1f(uXOffset, cloud.mXOffset + mXOffset);
-			GLES20.glUniform1f(uPointSizeOffset, 0f);
-			GLES20.glUniform1f(uColor, 1f);
-			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mStartIndex,
-					mPointsPerCloud);
-			GLES20.glUniform1f(uPointSizeOffset, 4f);
-			GLES20.glUniform1f(uColor, .5f);
-			GLES20.glDrawArrays(GLES20.GL_POINTS, cloud.mStartIndex,
-					mPointsPerCloud);
+			for (int i = 0; i < mPointsPerCloud; ++i) {
+				GLES20.glUniform3f(uPointPosition,
+						cloud.mPointPositions[i * 2 + 0] + cloud.mXOffset
+								- mXOffset, cloud.mPointPositions[i * 2 + 1],
+						cloud.mZValue);
+				GLES20.glUniform1f(uPointSize, cloud.mPointSizes[i]);
+				GLES20.glUniform3f(uColor, 1f, 1f, 1f);
+				GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+			}
+			for (int i = 0; i < mPointsPerCloud; ++i) {
+				GLES20.glUniform3f(uPointPosition,
+						cloud.mPointPositions[i * 2 + 0] + cloud.mXOffset
+								- mXOffset, cloud.mPointPositions[i * 2 + 1],
+						cloud.mZValue);
+				GLES20.glUniform1f(uPointSize, cloud.mPointSizes[i]
+						+ POINT_BORDER_SIZE);
+				GLES20.glUniform3f(uColor, .5f, .5f, .5f);
+				GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+			}
 		}
 
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
@@ -181,21 +191,22 @@ public final class FlierClouds {
 	 *            Height in pixels.
 	 */
 	public void onSurfaceChanged(int width, int height) {
-		float aspectRatio = (float) height / width;
-		Matrix.frustumM(mProjM, 0, -1f, 1f, -aspectRatio, aspectRatio, ZNEAR,
-				ZFAR);
+		mAspectRatioX = 1f;
+		mAspectRatioY = (float) height / width;
+		if (mAspectRatioY < 1f) {
+			mAspectRatioY = 1f;
+			mAspectRatioX = (float) width / height;
+		}
+		Matrix.frustumM(mProjM, 0, -mAspectRatioX, mAspectRatioX,
+				-mAspectRatioY, mAspectRatioY, ZNEAR, ZFAR);
 
 		final float projInvM[] = new float[16];
 		Matrix.invertM(projInvM, 0, mProjM, 0);
 		unproject(projInvM, mRectNear, -1);
 		unproject(projInvM, mRectFar, 1);
 
-		mMaxPointSizeNear = Math.min(width, height) / 5;
-		mMaxPointSizeFar = Math.min(width, height) / 10;
-
-		mXOffsetMultiplier = mRectNear.width();
-		mRectNear.right += mXOffsetMultiplier;
-		mRectFar.right += mXOffsetMultiplier;
+		mRectNear.right += X_OFFSET_MULTIPLIER;
+		mRectFar.right += X_OFFSET_MULTIPLIER;
 
 		for (Cloud cloud : mClouds) {
 			genRandCloud(cloud);
@@ -212,7 +223,7 @@ public final class FlierClouds {
 	 *            Context for reading shaders from.
 	 */
 	public void onSurfaceCreated(Context ctx) {
-		mShaderPoint.setProgram(ctx.getString(R.string.shader_cloud_vs),
+		mShaderPoint.setProgram(ctx.getString(R.string.shader_point_vs),
 				ctx.getString(R.string.shader_cloud_fs));
 	}
 
@@ -237,7 +248,7 @@ public final class FlierClouds {
 	 *            New x offset value.
 	 */
 	public void setXOffset(float xOffset) {
-		mXOffset = xOffset * mXOffsetMultiplier;
+		mXOffset = xOffset * X_OFFSET_MULTIPLIER;
 	}
 
 	/**
@@ -279,8 +290,8 @@ public final class FlierClouds {
 	 * Private class for storing cloud information.
 	 */
 	private final class Cloud {
+		public float[] mPointPositions, mPointSizes;
 		public float mSpeed, mXOffset;
-		public int mStartIndex;
 		public final RectF mViewRect = new RectF();
 		public float mWidth, mHeight, mZValue;
 	}

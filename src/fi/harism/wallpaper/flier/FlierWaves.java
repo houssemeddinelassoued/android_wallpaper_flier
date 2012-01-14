@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 
 import android.content.Context;
 import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.os.SystemClock;
 
 /**
@@ -119,23 +120,29 @@ public final class FlierWaves {
 				GLES20.GL_REPEAT);
 
 		mShaderWaveTexture.useProgram();
+		int uModelViewProjM = mShaderWaveTexture.getHandle("uModelViewProjM");
+		int uPointPosition = mShaderWaveTexture.getHandle("uPointPosition");
 		int uPointSize = mShaderWaveTexture.getHandle("uPointSize");
+		int uAspectRatio = mShaderWaveTexture.getHandle("uAspectRatio");
 		int uBrightness = mShaderWaveTexture.getHandle("uBrightness");
 		int aPosition = mShaderWaveTexture.getHandle("aPosition");
 
-		ByteBuffer bBuffer = ByteBuffer.allocateDirect(2);
-		bBuffer.put(new byte[] { 0, -1 }).position(0);
+		float[] mvpM = new float[16];
+		Matrix.setIdentityM(mvpM, 0);
+		GLES20.glUniformMatrix4fv(uModelViewProjM, 1, false, mvpM, 0);
+		GLES20.glUniform3f(uPointPosition, 0f, -1f, 0f);
+		GLES20.glUniform2f(uAspectRatio, 1f, 1f);
 		GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_BYTE, false, 0,
-				bBuffer);
+				mVertices);
 		GLES20.glEnableVertexAttribArray(aPosition);
 
-		GLES20.glUniform1f(uPointSize, mWaveSize + 3);
+		GLES20.glUniform1f(uPointSize, 1.075f);
 		GLES20.glUniform1f(uBrightness, .6f);
-		GLES20.glDrawArrays(GLES20.GL_POINTS, 0, 1);
+		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
-		GLES20.glUniform1f(uPointSize, mWaveSize);
+		GLES20.glUniform1f(uPointSize, 1f);
 		GLES20.glUniform1f(uBrightness, .0f);
-		GLES20.glDrawArrays(GLES20.GL_POINTS, 0, 1);
+		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 	}
 
 	/**
@@ -146,8 +153,7 @@ public final class FlierWaves {
 	 */
 	public void onSurfaceCreated(Context ctx) {
 		mWaveFbo.reset();
-		mShaderWaveTexture.setProgram(
-				ctx.getString(R.string.shader_wave_texture_vs),
+		mShaderWaveTexture.setProgram(ctx.getString(R.string.shader_point_vs),
 				ctx.getString(R.string.shader_wave_texture_fs));
 		mShaderWave.setProgram(ctx.getString(R.string.shader_wave_vs),
 				ctx.getString(R.string.shader_wave_fs));
@@ -161,7 +167,7 @@ public final class FlierWaves {
 	 *            New x offset value.
 	 */
 	public void setXOffset(float xOffset) {
-		mXOffset = xOffset;
+		mXOffset = xOffset * 2f;
 	}
 
 	/**
