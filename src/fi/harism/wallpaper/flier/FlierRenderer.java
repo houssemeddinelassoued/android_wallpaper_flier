@@ -26,6 +26,8 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
+import android.widget.Toast;
 
 /**
  * Main renderer class.
@@ -130,13 +132,26 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	@Override
 	public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-		mShaderCopy.setProgram(mContext.getString(R.string.shader_copy_vs),
-				mContext.getString(R.string.shader_copy_fs));
-		mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
-				mContext.getString(R.string.shader_fill_fs));
-		mFlierWaves.onSurfaceCreated(mContext);
-		mFlierPlane.onSurfaceCreated(mContext);
-		mFlierClouds.onSurfaceCreated(mContext);
+		boolean[] retVal = new boolean[1];
+		GLES20.glGetBooleanv(GLES20.GL_SHADER_COMPILER, retVal, 0);
+		if (retVal[0] == false) {
+			Handler handler = new Handler(mContext.getMainLooper());
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(mContext, R.string.error_shader_compiler,
+							Toast.LENGTH_LONG).show();
+				}
+			});
+		} else {
+			mShaderCopy.setProgram(mContext.getString(R.string.shader_copy_vs),
+					mContext.getString(R.string.shader_copy_fs));
+			mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
+					mContext.getString(R.string.shader_fill_fs));
+			mFlierWaves.onSurfaceCreated(mContext);
+			mFlierPlane.onSurfaceCreated(mContext);
+			mFlierClouds.onSurfaceCreated(mContext);
+		}
 	}
 
 	/**

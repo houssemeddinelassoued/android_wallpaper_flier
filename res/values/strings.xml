@@ -4,5 +4,7 @@
     <string name="app_name">Flier</string>
     <string name="author">harism</string>
     <string name="description">Flier, live OpenGL ES 2.0 wallpaper.</string>
+    
+    <string name="error_shader_compiler">Flier error, GLSL shader compiler not supported.</string>
 
 </resources>
