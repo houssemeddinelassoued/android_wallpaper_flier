@@ -37,6 +37,8 @@ public final class FlierPlane {
 	private FloatBuffer mBufferVertices;
 	// Outline line width;
 	private int mLineWidth;
+	// Plane color.
+	private float[] mPlaneColor = new float[3];
 	// Projection and view matrices.
 	private final float[] mProjM = new float[16], mViewM = new float[16];
 	// Plane shader used for rendering both lines and surfaces.
@@ -102,7 +104,8 @@ public final class FlierPlane {
 
 		GLES20.glEnable(GLES20.GL_POLYGON_OFFSET_FILL);
 		GLES20.glPolygonOffset(1f, 1f);
-		GLES20.glUniform3f(uColor, .8f, .8f, .8f);
+		GLES20.glUniform3fv(uColor, 1, mPlaneColor, 0);
+		// GLES20.glUniform3f(uColor, .8f, .8f, .8f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6);
 		GLES20.glDisable(GLES20.GL_POLYGON_OFFSET_FILL);
 
@@ -144,6 +147,16 @@ public final class FlierPlane {
 	public void onSurfaceCreated(Context ctx) {
 		mShaderPlane.setProgram(ctx.getString(R.string.shader_plane_vs),
 				ctx.getString(R.string.shader_plane_fs));
+	}
+
+	/**
+	 * Sets plane color.
+	 * 
+	 * @param planeColor
+	 *            Three float RGB array.
+	 */
+	public void setColor(float[] planeColor) {
+		mPlaneColor = planeColor;
 	}
 
 	/**

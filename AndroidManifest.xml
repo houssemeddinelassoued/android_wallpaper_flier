@@ -26,6 +26,11 @@
                 android:name="android.service.wallpaper"
                 android:resource="@xml/flier" />
         </service>
+
+        <activity
+            android:name=".prefs.FlierPreferenceActivity"
+            android:exported="true"
+            android:label="@string/preferences_name" />
     </application>
 
 </manifest>

@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- General strings -->
     <string name="app_name">Flier</string>
+    <string name="preferences_name">Flier Preferences</string>
     <string name="author">harism</string>
     <string name="description">Flier, live OpenGL ES 2.0 wallpaper.</string>
-    
-    <string name="error_shader_compiler">Flier error, GLSL shader compiler not supported.</string>
+    <!-- Error strings -->
+    <string name="error_shader_compiler">Flier error; GLSL shader compiler not supported.</string>
+    <!-- Prefence keys -->
+    <string name="key_general_quality">key_general_quality</string>
+    <string name="key_general_brightness">key_general_brightness</string>
+    <string name="key_colors_scheme">key_colors_scheme</string>
+    <string name="key_colors_bg_top">key_colors_bg_top</string>
+    <string name="key_colors_bg_bottom">key_colors_bg_bottom</string>
+    <string name="key_colors_plane">key_colors_plane</string>
+    <string name="key_colors_wave_front">key_colors_wave_front</string>
+    <string name="key_colors_wave_back">key_colors_wave_back</string>
+    <string name="key_colors_cloud">key_colors_cloud</string>
+    <string name="key_colors_cloud_outline">key_colors_cloud_outline</string>
 
 </resources>

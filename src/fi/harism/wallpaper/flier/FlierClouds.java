@@ -44,6 +44,9 @@ public final class FlierClouds {
 
 	// Projection matrix aspect ratio.
 	private float mAspectRatioX, mAspectRatioY;
+	// Cloud and cloud outline colors.
+	private float[] mCloudColor = new float[3],
+			mCloudOutlineColor = new float[3];
 	// Cloud storage.
 	private final Vector<Cloud> mClouds = new Vector<Cloud>();
 	// Number of points per cloud.
@@ -158,15 +161,17 @@ public final class FlierClouds {
 		GLES20.glStencilOp(GLES20.GL_KEEP, GLES20.GL_INCR, GLES20.GL_INCR);
 
 		for (Cloud cloud : mClouds) {
+			GLES20.glUniform3fv(uColor, 1, mCloudColor, 0);
 			for (int i = 0; i < mPointsPerCloud; ++i) {
 				GLES20.glUniform3f(uPointPosition,
 						cloud.mPointPositions[i * 2 + 0] + cloud.mXOffset
 								- mXOffset, cloud.mPointPositions[i * 2 + 1],
 						cloud.mZValue);
 				GLES20.glUniform1f(uPointSize, cloud.mPointSizes[i]);
-				GLES20.glUniform3f(uColor, 1f, 1f, 1f);
+				// GLES20.glUniform3f(uColor, 1f, 1f, 1f);
 				GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 			}
+			GLES20.glUniform3fv(uColor, 1, mCloudOutlineColor, 0);
 			for (int i = 0; i < mPointsPerCloud; ++i) {
 				GLES20.glUniform3f(uPointPosition,
 						cloud.mPointPositions[i * 2 + 0] + cloud.mXOffset
@@ -174,7 +179,7 @@ public final class FlierClouds {
 						cloud.mZValue);
 				GLES20.glUniform1f(uPointSize, cloud.mPointSizes[i]
 						+ POINT_BORDER_SIZE);
-				GLES20.glUniform3f(uColor, .5f, .5f, .5f);
+				// GLES20.glUniform3f(uColor, .5f, .5f, .5f);
 				GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 			}
 		}
@@ -238,6 +243,19 @@ public final class FlierClouds {
 	 */
 	private float rand(float min, float max) {
 		return min + (float) Math.random() * (max - min);
+	}
+
+	/**
+	 * Sets cloud colors.
+	 * 
+	 * @param cloudColor
+	 *            Three float RGB array.
+	 * @param cloudOutlineColor
+	 *            Three float RGB array.
+	 */
+	public void setColors(float[] cloudColor, float[] cloudOutlineColor) {
+		mCloudColor = cloudColor;
+		mCloudOutlineColor = cloudOutlineColor;
 	}
 
 	/**

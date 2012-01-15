@@ -34,6 +34,9 @@ public final class FlierWaves {
 	private final FlierShader mShaderWaveTexture = new FlierShader();
 	// Screen vertices.
 	private ByteBuffer mVertices;
+	// Front and back wave colors.
+	private float[] mWaveColorFront = new float[3],
+			mWaveColorBack = new float[3];
 	// FBO for rendering wave texture into.
 	private final FlierFbo mWaveFbo = new FlierFbo();
 	// View width, height and wave texture size.
@@ -81,7 +84,8 @@ public final class FlierWaves {
 		GLES20.glUniform2f(uPositionOffset, dx1, dy1);
 		GLES20.glUniform2f(uTextureSize, (float) width / mWaveSize,
 				(float) height / mWaveSize);
-		GLES20.glUniform3f(uColor, .3f, .4f, .6f);
+		GLES20.glUniform3fv(uColor, 1, mWaveColorBack, 0);
+		// GLES20.glUniform3f(uColor, .3f, .4f, .6f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
@@ -89,7 +93,8 @@ public final class FlierWaves {
 		GLES20.glStencilOp(GLES20.GL_REPLACE, GLES20.GL_REPLACE,
 				GLES20.GL_REPLACE);
 		GLES20.glUniform2f(uPositionOffset, dx2, dy2);
-		GLES20.glUniform3f(uColor, .5f, .6f, .8f);
+		GLES20.glUniform3fv(uColor, 1, mWaveColorFront, 0);
+		// GLES20.glUniform3f(uColor, .5f, .6f, .8f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 
@@ -157,6 +162,19 @@ public final class FlierWaves {
 				ctx.getString(R.string.shader_wave_texture_fs));
 		mShaderWave.setProgram(ctx.getString(R.string.shader_wave_vs),
 				ctx.getString(R.string.shader_wave_fs));
+	}
+
+	/**
+	 * Sets wave colors.
+	 * 
+	 * @param waveColorFront
+	 *            Three float RGB array.
+	 * @param waveColorBack
+	 *            Three float RGB arrat.
+	 */
+	public void setColors(float[] waveColorFront, float[] waveColorBack) {
+		mWaveColorFront = waveColorFront;
+		mWaveColorBack = waveColorBack;
 	}
 
 	/**

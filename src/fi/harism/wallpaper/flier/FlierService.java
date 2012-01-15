@@ -17,7 +17,9 @@
 package fi.harism.wallpaper.flier;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
+import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
 import android.view.SurfaceHolder;
 
@@ -28,16 +30,19 @@ public final class FlierService extends WallpaperService {
 
 	@Override
 	public Engine onCreateEngine() {
+		PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
 		return new WallpaperEngine();
 	}
 
 	/**
 	 * Private wallpaper engine implementation.
 	 */
-	private final class WallpaperEngine extends Engine {
+	private final class WallpaperEngine extends Engine implements
+			SharedPreferences.OnSharedPreferenceChangeListener {
 
 		// Slightly modified GLSurfaceView.
 		private WallpaperGLSurfaceView mGLSurfaceView;
+		private SharedPreferences mPreferences;
 		private FlierRenderer mRenderer;
 
 		@Override
@@ -48,6 +53,12 @@ public final class FlierService extends WallpaperService {
 
 			super.onCreate(surfaceHolder);
 			mRenderer = new FlierRenderer(FlierService.this);
+
+			mPreferences = PreferenceManager
+					.getDefaultSharedPreferences(FlierService.this);
+			mPreferences.registerOnSharedPreferenceChangeListener(this);
+			mRenderer.setPreferences(mPreferences);
+
 			mGLSurfaceView = new WallpaperGLSurfaceView(FlierService.this);
 			mGLSurfaceView.setEGLContextClientVersion(2);
 			mGLSurfaceView
@@ -59,6 +70,8 @@ public final class FlierService extends WallpaperService {
 		@Override
 		public void onDestroy() {
 			super.onDestroy();
+			mPreferences.unregisterOnSharedPreferenceChangeListener(this);
+			mPreferences = null;
 			mGLSurfaceView.onDestroy();
 			mGLSurfaceView = null;
 			mRenderer = null;
@@ -71,6 +84,12 @@ public final class FlierService extends WallpaperService {
 			super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep,
 					xPixelOffset, yPixelOffset);
 			mRenderer.setXOffset(xOffset);
+		}
+
+		@Override
+		public void onSharedPreferenceChanged(
+				SharedPreferences sharedPreferences, String key) {
+			mRenderer.setPreferences(sharedPreferences);
 		}
 
 		@Override

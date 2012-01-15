@@ -1,0 +1,72 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:harism="http://schemas.android.com/apk/res/fi.harism.glsl" >
+
+    <PreferenceCategory android:title="General" >
+        <ListPreference
+            android:defaultValue="1"
+            android:entries="@array/general_quality_entries"
+            android:entryValues="@array/general_quality_values"
+            android:key="@string/key_general_quality"
+            android:summary="Select rendering quality"
+            android:title="Render Quality" />
+
+        <fi.harism.wallpaper.flier.prefs.FlierBrightnessPreference
+            android:defaultValue="100"
+            android:key="@string/key_general_brightness"
+            android:summary="Select brightness value to be applied to the whole scene"
+            android:title="Brightness" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="Colors" >
+        <fi.harism.wallpaper.flier.prefs.FlierColorSchemePreference
+            android:defaultValue="1"
+            android:entries="@array/colors_scheme_entries"
+            android:entryValues="@array/colors_scheme_values"
+            android:key="@string/key_colors_scheme"
+            android:summary="Select predefined color scheme or custom to create your own"
+            android:title="Color Scheme" />
+
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#808080"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_bg_top"
+            android:summary="Select background gradient color"
+            android:title="Backround Top" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#AA8060"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_bg_bottom"
+            android:summary="Select background gradient color"
+            android:title="Backround Bottom" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#4040B0"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_wave_front"
+            android:summary="Select foreground wave color"
+            android:title="Wave Front" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#404080"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_wave_back"
+            android:summary="Select background wave color"
+            android:title="Wave Back" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#BBBBBB"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_plane"
+            android:summary="Select plane fill color"
+            android:title="Plane" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#EEEEEE"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_cloud"
+            android:summary="Select cloud color"
+            android:title="Cloud" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#505050"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_cloud_outline"
+            android:summary="Select cloud outline color"
+            android:title="Cloud Outline" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
