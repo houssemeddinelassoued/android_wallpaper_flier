@@ -37,11 +37,13 @@ import android.widget.Toast;
 public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	// Holder for background colors.
-	private FloatBuffer mBackgroundColors;
+	private FloatBuffer mBufferBgColors;
+	// Vertices for full view rendering.
+	private ByteBuffer mBufferVertices;
 	// Application context.
 	private Context mContext;
 	// Clouds rendering class.
-	private final FlierClouds mFlierClouds = new FlierClouds(10, 10);
+	private final FlierClouds mFlierClouds = new FlierClouds();
 	// Fbo for offscreen rendering.
 	private final FlierFbo mFlierFbo = new FlierFbo();
 	// Plane rendering class.
@@ -54,8 +56,6 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 	private int mPreferenceQuality;
 	// Boolean to indicate preferences have changed.
 	private boolean mPreferencesChanged;
-	// Vertices for full view rendering.
-	private FloatBuffer mScreenVertices;
 	// Shader for copying offscreen texture on screen.
 	private final FlierShader mShaderCopy = new FlierShader();
 	// Shader for rendering background gradient.
@@ -72,15 +72,13 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 	public FlierRenderer(Context context) {
 		mContext = context;
 
-		// Create screen coordinates float buffer.
-		final float SCREEN_COORDS[] = { -1f, 1f, -1f, -1f, 1f, 1f, 1f, -1f };
-		ByteBuffer bBuf = ByteBuffer.allocateDirect(2 * 4 * 4);
-		mScreenVertices = bBuf.order(ByteOrder.nativeOrder()).asFloatBuffer();
-		mScreenVertices.put(SCREEN_COORDS).position(0);
+		// Create full scene quad buffer.
+		mBufferVertices = ByteBuffer.allocateDirect(4 * 2);
+		mBufferVertices.put(FlierConstants.FULL_QUAD_COORDS).position(0);
 
 		// Create background color float buffer.
-		bBuf = ByteBuffer.allocateDirect(3 * 4 * 4);
-		mBackgroundColors = bBuf.order(ByteOrder.nativeOrder()).asFloatBuffer();
+		ByteBuffer bBuf = ByteBuffer.allocateDirect(3 * 4 * 4);
+		mBufferBgColors = bBuf.order(ByteOrder.nativeOrder()).asFloatBuffer();
 	}
 
 	/**
@@ -139,12 +137,12 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		// Render background gradient.
 		mShaderFill.useProgram();
 		int positionAttribLocation = mShaderFill.getHandle("aPosition");
-		GLES20.glVertexAttribPointer(positionAttribLocation, 2,
-				GLES20.GL_FLOAT, false, 0, mScreenVertices);
+		GLES20.glVertexAttribPointer(positionAttribLocation, 2, GLES20.GL_BYTE,
+				false, 0, mBufferVertices);
 		GLES20.glEnableVertexAttribArray(positionAttribLocation);
 		int colorAttribLocation = mShaderFill.getHandle("aColor");
 		GLES20.glVertexAttribPointer(colorAttribLocation, 3, GLES20.GL_FLOAT,
-				false, 0, mBackgroundColors);
+				false, 0, mBufferBgColors);
 		GLES20.glEnableVertexAttribArray(colorAttribLocation);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
@@ -160,8 +158,8 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 		int uBrightness = mShaderCopy.getHandle("uBrightness");
 		int aPosition = mShaderCopy.getHandle("aPosition");
 		GLES20.glUniform1f(uBrightness, mPreferenceBrightness);
-		GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_FLOAT, false, 0,
-				mScreenVertices);
+		GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_BYTE, false, 0,
+				mBufferVertices);
 		GLES20.glEnableVertexAttribArray(aPosition);
 		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFlierFbo.getTexture(0));
@@ -213,44 +211,48 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 		key = mContext.getString(R.string.key_colors_scheme);
 		int scheme = Integer.parseInt(preferences.getString(key, "1"));
-		float[] bgColorTop, bgColorBottom, waveColorFront, waveColorBack, planeColor, cloudColor, cloudOutlineColor;
+		float[] bgColorTop, bgColorBottom, waveColorFront, waveColorBack, planeColor, planeOutlineColor, cloudColor, cloudOutlineColor;
 
 		switch (scheme) {
 		case 1:
-			bgColorTop = new float[] { .6f, .7f, .9f };
-			bgColorBottom = new float[] { .3f, .4f, .6f };
-			waveColorFront = new float[] { .5f, .6f, .8f };
-			waveColorBack = new float[] { .3f, .4f, .6f };
-			planeColor = new float[] { .8f, .8f, .8f };
-			cloudColor = new float[] { .9f, .9f, .9f };
-			cloudOutlineColor = new float[] { .5f, .5f, .5f };
+			bgColorTop = FlierConstants.SCHEME_BLUE_BG_TOP;
+			bgColorBottom = FlierConstants.SCHEME_BLUE_BG_BOTTOM;
+			waveColorFront = FlierConstants.SCHEME_BLUE_WAVE_FRONT;
+			waveColorBack = FlierConstants.SCHEME_BLUE_WAVE_BACK;
+			planeColor = FlierConstants.SCHEME_BLUE_PLANE;
+			planeOutlineColor = FlierConstants.SCHEME_BLUE_PLANE_OUTLINE;
+			cloudColor = FlierConstants.SCHEME_BLUE_CLOUD;
+			cloudOutlineColor = FlierConstants.SCHEME_BLUE_CLOUD_OUTLINE;
 			break;
 		case 2:
-			bgColorTop = new float[] { .7f, .7f, .7f };
-			bgColorBottom = new float[] { .4f, .4f, .4f };
-			waveColorFront = new float[] { .6f, .6f, .6f };
-			waveColorBack = new float[] { .4f, .4f, .4f };
-			planeColor = new float[] { .8f, .8f, .8f };
-			cloudColor = new float[] { .9f, .9f, .9f };
-			cloudOutlineColor = new float[] { .5f, .5f, .5f };
+			bgColorTop = FlierConstants.SCHEME_GREY_BG_TOP;
+			bgColorBottom = FlierConstants.SCHEME_GREY_BG_BOTTOM;
+			waveColorFront = FlierConstants.SCHEME_GREY_WAVE_FRONT;
+			waveColorBack = FlierConstants.SCHEME_GREY_WAVE_BACK;
+			planeColor = FlierConstants.SCHEME_GREY_PLANE;
+			planeOutlineColor = FlierConstants.SCHEME_GREY_PLANE_OUTLINE;
+			cloudColor = FlierConstants.SCHEME_GREY_CLOUD;
+			cloudOutlineColor = FlierConstants.SCHEME_GREY_CLOUD_OUTLINE;
 			break;
 		case 3:
-			bgColorTop = new float[] { .9f, .6f, .7f };
-			bgColorBottom = new float[] { .6f, .3f, .4f };
-			waveColorFront = new float[] { .8f, .5f, .6f };
-			waveColorBack = new float[] { .6f, .3f, .4f };
-			planeColor = new float[] { .8f, .8f, .8f };
-			cloudColor = new float[] { 1.0f, .8f, .85f };
-			cloudOutlineColor = new float[] { .7f, .4f, .45f };
+			bgColorTop = FlierConstants.SCHEME_STRAWBERRY_BG_TOP;
+			bgColorBottom = FlierConstants.SCHEME_STRAWBERRY_BG_BOTTOM;
+			waveColorFront = FlierConstants.SCHEME_STRAWBERRY_WAVE_FRONT;
+			waveColorBack = FlierConstants.SCHEME_STRAWBERRY_WAVE_BACK;
+			planeColor = FlierConstants.SCHEME_STRAWBERRY_PLANE;
+			planeOutlineColor = FlierConstants.SCHEME_STRAWBERRY_PLANE_OUTLINE;
+			cloudColor = FlierConstants.SCHEME_STRAWBERRY_CLOUD;
+			cloudOutlineColor = FlierConstants.SCHEME_STRAWBERRY_CLOUD_OUTLINE;
 			break;
 		case 4:
-			bgColorTop = new float[] { .9f, .6f, .3f };
-			bgColorBottom = new float[] { .6f, .3f, .1f };
-			waveColorFront = new float[] { .7f, .4f, .1f };
-			waveColorBack = new float[] { .6f, .3f, .1f };
-			planeColor = new float[] { .8f, .8f, .8f };
-			cloudColor = new float[] { .9f, .6f, .3f };
-			cloudOutlineColor = new float[] { .6f, .3f, .1f };
+			bgColorTop = FlierConstants.SCHEME_CINNAMON_BG_TOP;
+			bgColorBottom = FlierConstants.SCHEME_CINNAMON_BG_BOTTOM;
+			waveColorFront = FlierConstants.SCHEME_CINNAMON_WAVE_FRONT;
+			waveColorBack = FlierConstants.SCHEME_CINNAMON_WAVE_BACK;
+			planeColor = FlierConstants.SCHEME_CINNAMON_PLANE;
+			planeOutlineColor = FlierConstants.SCHEME_CINNAMON_PLANE_OUTLINE;
+			cloudColor = FlierConstants.SCHEME_CINNAMON_CLOUD;
+			cloudOutlineColor = FlierConstants.SCHEME_CINNAMON_CLOUD_OUTLINE;
 			break;
 		default:
 			bgColorTop = loadColor(R.string.key_colors_bg_top, preferences);
@@ -261,16 +263,18 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 			waveColorBack = loadColor(R.string.key_colors_wave_back,
 					preferences);
 			planeColor = loadColor(R.string.key_colors_plane, preferences);
+			planeOutlineColor = loadColor(R.string.key_colors_plane_outline,
+					preferences);
 			cloudColor = loadColor(R.string.key_colors_cloud, preferences);
 			cloudOutlineColor = loadColor(R.string.key_colors_cloud_outline,
 					preferences);
 			break;
 		}
 
-		mBackgroundColors.put(bgColorTop).put(bgColorBottom).put(bgColorTop)
+		mBufferBgColors.put(bgColorTop).put(bgColorBottom).put(bgColorTop)
 				.put(bgColorBottom).position(0);
 		mFlierWaves.setColors(waveColorFront, waveColorBack);
-		mFlierPlane.setColor(planeColor);
+		mFlierPlane.setColor(planeColor, planeOutlineColor);
 		mFlierClouds.setColors(cloudColor, cloudOutlineColor);
 
 		mPreferencesChanged = true;

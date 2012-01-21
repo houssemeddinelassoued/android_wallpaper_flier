@@ -73,8 +73,9 @@
     <string name="shader_plane_fs">
         precision mediump float;
         uniform vec3 uColor;
+        uniform float uAlpha;
         void main() {
-            gl_FragColor = vec4(uColor, 1.0);
+            gl_FragColor = vec4(uColor, uAlpha);
         }
     </string>
     <string name="shader_wave_texture_fs">

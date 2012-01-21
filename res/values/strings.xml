@@ -15,6 +15,7 @@
     <string name="key_colors_bg_top">key_colors_bg_top</string>
     <string name="key_colors_bg_bottom">key_colors_bg_bottom</string>
     <string name="key_colors_plane">key_colors_plane</string>
+    <string name="key_colors_plane_outline">key_colors_plane_outline</string>
     <string name="key_colors_wave_front">key_colors_wave_front</string>
     <string name="key_colors_wave_back">key_colors_wave_back</string>
     <string name="key_colors_cloud">key_colors_cloud</string>

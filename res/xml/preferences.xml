@@ -56,6 +56,12 @@
             android:summary="Select plane fill color"
             android:title="Plane" />
         <fi.harism.wallpaper.flier.prefs.FlierColorPreference
+            android:defaultValue="#101010"
+            android:dependency="@string/key_colors_scheme"
+            android:key="@string/key_colors_plane_outline"
+            android:summary="Select plane outline color"
+            android:title="Plane Outline" />
+        <fi.harism.wallpaper.flier.prefs.FlierColorPreference
             android:defaultValue="#EEEEEE"
             android:dependency="@string/key_colors_scheme"
             android:key="@string/key_colors_cloud"

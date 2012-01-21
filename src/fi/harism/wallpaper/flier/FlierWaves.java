@@ -48,9 +48,8 @@ public final class FlierWaves {
 	 * Default constructor.
 	 */
 	public FlierWaves() {
-		final byte[] COORDS = { -1, 1, -1, -1, 1, 1, 1, -1 };
 		mVertices = ByteBuffer.allocateDirect(4 * 2);
-		mVertices.put(COORDS).position(0);
+		mVertices.put(FlierConstants.FULL_QUAD_COORDS).position(0);
 	}
 
 	/**
@@ -85,7 +84,6 @@ public final class FlierWaves {
 		GLES20.glUniform2f(uTextureSize, (float) width / mWaveSize,
 				(float) height / mWaveSize);
 		GLES20.glUniform3fv(uColor, 1, mWaveColorBack, 0);
-		// GLES20.glUniform3f(uColor, .3f, .4f, .6f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
 		GLES20.glEnable(GLES20.GL_STENCIL_TEST);
@@ -94,7 +92,6 @@ public final class FlierWaves {
 				GLES20.GL_REPLACE);
 		GLES20.glUniform2f(uPositionOffset, dx2, dy2);
 		GLES20.glUniform3fv(uColor, 1, mWaveColorFront, 0);
-		// GLES20.glUniform3f(uColor, .5f, .6f, .8f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 

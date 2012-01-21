@@ -38,7 +38,8 @@ public final class FlierPlane {
 	// Outline line width;
 	private int mLineWidth;
 	// Plane color.
-	private float[] mPlaneColor = new float[3];
+	private float[] mPlaneColor = new float[3],
+			mPlaneOutlineColor = new float[3];
 	// Projection and view matrices.
 	private final float[] mProjM = new float[16], mViewM = new float[16];
 	// Plane shader used for rendering both lines and surfaces.
@@ -80,7 +81,6 @@ public final class FlierPlane {
 		Matrix.rotateM(modelViewProjM, 0, rz, 0, 0, 1f);
 
 		Matrix.translateM(modelViewProjM, 0, 1f, -mAspectRatio / 5f, 0f);
-
 		Matrix.scaleM(modelViewProjM, 0, scale, scale, scale);
 
 		Matrix.multiplyMM(modelViewProjM, 0, mViewM, 0, modelViewProjM, 0);
@@ -89,8 +89,10 @@ public final class FlierPlane {
 		mShaderPlane.useProgram();
 		int uModelViewProjM = mShaderPlane.getHandle("uModelViewProjM");
 		int uColor = mShaderPlane.getHandle("uColor");
+		int uAlpha = mShaderPlane.getHandle("uAlpha");
 		int aPosition = mShaderPlane.getHandle("aPosition");
 		GLES20.glUniformMatrix4fv(uModelViewProjM, 1, false, modelViewProjM, 0);
+		GLES20.glUniform1f(uAlpha, 1f);
 		GLES20.glVertexAttribPointer(aPosition, 3, GLES20.GL_FLOAT, false,
 				3 * 4, mBufferVertices);
 		GLES20.glEnableVertexAttribArray(aPosition);
@@ -102,23 +104,29 @@ public final class FlierPlane {
 		GLES20.glStencilOp(GLES20.GL_REPLACE, GLES20.GL_REPLACE,
 				GLES20.GL_REPLACE);
 
+		// Render filled polygons.
 		GLES20.glEnable(GLES20.GL_POLYGON_OFFSET_FILL);
 		GLES20.glPolygonOffset(1f, 1f);
 		GLES20.glUniform3fv(uColor, 1, mPlaneColor, 0);
-		// GLES20.glUniform3f(uColor, .8f, .8f, .8f);
+		GLES20.glUniform1f(uAlpha, 1f);
 		GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 6);
 		GLES20.glDisable(GLES20.GL_POLYGON_OFFSET_FILL);
 
+		// Render sharp outlines.
 		GLES20.glLineWidth(mLineWidth);
-		GLES20.glUniform3f(uColor, .2f, .2f, .2f);
+		GLES20.glUniform3fv(uColor, 1, mPlaneOutlineColor, 0);
 		GLES20.glDrawElements(GLES20.GL_LINES, mBufferLineIndices.capacity(),
 				GLES20.GL_UNSIGNED_BYTE, mBufferLineIndices);
 
+		// Render outlines with blending for smoothening them a bit.
+		GLES20.glEnable(GLES20.GL_BLEND);
+		GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 		GLES20.glLineWidth(mLineWidth + .5f);
-		GLES20.glUniform3f(uColor, .5f, .5f, .5f);
+		GLES20.glUniform1f(uAlpha, .5f);
 		GLES20.glDrawElements(GLES20.GL_LINES, mBufferLineIndices.capacity(),
 				GLES20.GL_UNSIGNED_BYTE, mBufferLineIndices);
 
+		GLES20.glDisable(GLES20.GL_BLEND);
 		GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 		GLES20.glDisable(GLES20.GL_STENCIL_TEST);
 	}
@@ -154,9 +162,12 @@ public final class FlierPlane {
 	 * 
 	 * @param planeColor
 	 *            Three float RGB array.
+	 * @param planeOutlineColor
+	 *            Three float RGB array.
 	 */
-	public void setColor(float[] planeColor) {
+	public void setColor(float[] planeColor, float[] planeOutlineColor) {
 		mPlaneColor = planeColor;
+		mPlaneOutlineColor = planeOutlineColor;
 	}
 
 	/**
