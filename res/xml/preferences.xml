@@ -30,13 +30,13 @@
             android:dependency="@string/key_colors_scheme"
             android:key="@string/key_colors_bg_top"
             android:summary="Select background gradient color"
-            android:title="Backround Top" />
+            android:title="Background Top" />
         <fi.harism.wallpaper.flier.prefs.FlierColorPreference
             android:defaultValue="#AA8060"
             android:dependency="@string/key_colors_scheme"
             android:key="@string/key_colors_bg_bottom"
             android:summary="Select background gradient color"
-            android:title="Backround Bottom" />
+            android:title="Background Bottom" />
         <fi.harism.wallpaper.flier.prefs.FlierColorPreference
             android:defaultValue="#4040B0"
             android:dependency="@string/key_colors_scheme"
