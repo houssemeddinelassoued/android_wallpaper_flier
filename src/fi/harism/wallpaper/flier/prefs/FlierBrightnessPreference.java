@@ -1,3 +1,19 @@
+/*
+   Copyright 2012 Harri Smått
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ */
+
 package fi.harism.wallpaper.flier.prefs;
 
 import android.content.Context;
@@ -9,11 +25,26 @@ import android.view.View;
 import android.widget.SeekBar;
 import fi.harism.wallpaper.flier.R;
 
+/**
+ * Brightness dialog preference. Stored value is an integer between [VALUE_MIN,
+ * VALUE_MAX]. Once used in renderer this value is divided by 100 making it a
+ * brightness percentage.
+ */
 public final class FlierBrightnessPreference extends DialogPreference {
 
+	// Maximum brightness value.
+	private static final int VALUE_MAX = 120;
+	// Minimum brightness value.
+	private static final int VALUE_MIN = 50;
+
+	// SeekBar shown in dialog.
 	private SeekBar mSeekBar;
+	// Current value.
 	private int mValue;
 
+	/**
+	 * Default constructor.
+	 */
 	public FlierBrightnessPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 	}
@@ -21,8 +52,9 @@ public final class FlierBrightnessPreference extends DialogPreference {
 	@Override
 	protected void onBindDialogView(View view) {
 		super.onBindDialogView(view);
-		mSeekBar.setMax(120 - 50);
-		mSeekBar.setProgress(mValue - 50);
+		// Adjust SeekBar range to [0, VALUE_MAX - VALUE_MIN].
+		mSeekBar.setMax(VALUE_MAX - VALUE_MIN);
+		mSeekBar.setProgress(mValue - VALUE_MIN);
 	}
 
 	@Override
@@ -35,7 +67,7 @@ public final class FlierBrightnessPreference extends DialogPreference {
 	@Override
 	protected void onDialogClosed(boolean positiveResult) {
 		if (positiveResult) {
-			int value = mSeekBar.getProgress() + 50;
+			int value = mSeekBar.getProgress() + VALUE_MIN;
 			if (callChangeListener(value)) {
 				mValue = value;
 				persistInt(mValue);
