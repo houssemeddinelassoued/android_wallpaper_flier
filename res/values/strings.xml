@@ -6,9 +6,42 @@
     <string name="preferences_name">Flier Preferences</string>
     <string name="author">harism</string>
     <string name="description">Flier, live OpenGL ES 2.0 wallpaper.</string>
+
     <!-- Error strings -->
     <string name="error_shader_compiler">Flier error; GLSL shader compiler not supported.</string>
-    <!-- Prefence keys -->
+
+    <!-- Layout strings -->
+    <string name="preference_color_red">R</string>
+    <string name="preference_color_green">G</string>
+    <string name="preference_color_blue">B</string>
+
+    <!-- Preference strings -->
+    <string name="general_title">General</string>
+    <string name="general_quality_title">Render Quality</string>
+    <string name="general_quality_summary">Select rendering quality</string>
+    <string name="general_brightness_title">Brightness</string>
+    <string name="general_brightness_summary">Select brightness value to be applied to the whole scene</string>
+    <string name="colors_title">Colors</string>
+    <string name="colors_scheme_title">Color Scheme</string>
+    <string name="colors_scheme_summary">Select predefined color scheme or custom to create your own</string>
+    <string name="colors_bg_top_title">Background Top</string>
+    <string name="colors_bg_top_summary">Select background gradient color</string>
+    <string name="colors_bg_bottom_title">Background Bottom</string>
+    <string name="colors_bg_bottom_summary">Select background gradient color</string>
+    <string name="colors_wave_front_title">Wave Front</string>
+    <string name="colors_wave_front_summary">Select foreground wave color</string>
+    <string name="colors_wave_back_title">Wave Back</string>
+    <string name="colors_wave_back_summary">Select background wave color</string>
+    <string name="colors_plane_title">Plane</string>
+    <string name="colors_plane_summary">Select plane fill color</string>
+    <string name="colors_plane_outline_title">Plane Outline</string>
+    <string name="colors_plane_outline_summary">Select plane outline color</string>
+    <string name="colors_cloud_title">Cloud</string>
+    <string name="colors_cloud_summary">Select cloud color</string>
+    <string name="colors_cloud_outline_title">Cloud Outline</string>
+    <string name="colors_cloud_outline_summary">Select cloud outline color</string>
+
+    <!-- Preference keys -->
     <string name="key_general_quality">key_general_quality</string>
     <string name="key_general_brightness">key_general_brightness</string>
     <string name="key_colors_scheme">key_colors_scheme</string>
