@@ -56,6 +56,8 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 	private int mPreferenceQuality;
 	// Boolean to indicate preferences have changed.
 	private boolean mPreferencesChanged;
+	// Flag for indicating whether shader compiler is supported.
+	private final boolean[] mShaderCompilerSupported = new boolean[1];
 	// Shader for copying offscreen texture on screen.
 	private final FlierShader mShaderCopy = new FlierShader();
 	// Shader for rendering background gradient.
@@ -102,7 +104,14 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	@Override
 	public void onDrawFrame(GL10 unused) {
-		// First check if preferences have changed.
+		// If shader compiler is not supported, clear screen buffer only.
+		if (mShaderCompilerSupported[0] == false) {
+			GLES20.glClearColor(0, 0, 0, 1);
+			GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+			return;
+		}
+
+		// If preferences have changed.
 		if (mPreferencesChanged) {
 			int width = mWidth;
 			int height = mHeight;
@@ -168,6 +177,12 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	@Override
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
+		// If shader compiler is not supported set viewport size only.
+		if (mShaderCompilerSupported[0] == false) {
+			GLES20.glViewport(0, 0, width, height);
+			return;
+		}
+
 		mWidth = width;
 		mHeight = height;
 		mPreferencesChanged = true;
@@ -175,9 +190,12 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 
 	@Override
 	public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-		boolean[] retVal = new boolean[1];
-		GLES20.glGetBooleanv(GLES20.GL_SHADER_COMPILER, retVal, 0);
-		if (retVal[0] == false) {
+		// Check if shader compiler is supported.
+		GLES20.glGetBooleanv(GLES20.GL_SHADER_COMPILER,
+				mShaderCompilerSupported, 0);
+
+		// If not, show user an error message and return immediately.
+		if (mShaderCompilerSupported[0] == false) {
 			Handler handler = new Handler(mContext.getMainLooper());
 			handler.post(new Runnable() {
 				@Override
@@ -186,15 +204,16 @@ public final class FlierRenderer implements GLSurfaceView.Renderer {
 							Toast.LENGTH_LONG).show();
 				}
 			});
-		} else {
-			mShaderCopy.setProgram(mContext.getString(R.string.shader_copy_vs),
-					mContext.getString(R.string.shader_copy_fs));
-			mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
-					mContext.getString(R.string.shader_fill_fs));
-			mFlierWaves.onSurfaceCreated(mContext);
-			mFlierPlane.onSurfaceCreated(mContext);
-			mFlierClouds.onSurfaceCreated(mContext);
+			return;
 		}
+
+		mShaderCopy.setProgram(mContext.getString(R.string.shader_copy_vs),
+				mContext.getString(R.string.shader_copy_fs));
+		mShaderFill.setProgram(mContext.getString(R.string.shader_fill_vs),
+				mContext.getString(R.string.shader_fill_fs));
+		mFlierWaves.onSurfaceCreated(mContext);
+		mFlierPlane.onSurfaceCreated(mContext);
+		mFlierClouds.onSurfaceCreated(mContext);
 	}
 
 	/**
